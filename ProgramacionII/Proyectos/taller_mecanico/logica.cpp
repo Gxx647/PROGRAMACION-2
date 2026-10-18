@@ -73,7 +73,7 @@ void ampliarVehiculos(SistemaTaller& s) {
 }
 
 
-// registro y consulta
+// registro 
 void registrarVehiculo(SistemaTaller& s) {
     
     if (s.numVehiculos >= s.capacidadVehiculos) {
