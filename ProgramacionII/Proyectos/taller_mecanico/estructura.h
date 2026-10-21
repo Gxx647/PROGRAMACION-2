@@ -1,5 +1,5 @@
-#ifndef ESTRUCTURAS_H
-#define ESTRUCTURAS_H
+#ifndef ESTRUCTURA_H
+#define ESTRUCTURA_H
 
 
 struct Taller {
@@ -59,7 +59,7 @@ struct OrdenServicio {
     char estado[12];
     char descripcionFalla[200];
     int kilometrajeIngreso;
-    float manoobra;
+    float manoObra;
     
     DetalleOrden* detalles;
     int numDetalles;
