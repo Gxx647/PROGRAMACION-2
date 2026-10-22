@@ -3,6 +3,6 @@
 
 #include "estructura.h"
 
-void menuRegistrarMecanico(SistemaTaller* s);
+void menuRegistrarMecanico(SistemaTaller& s); 
 
-#endif 
+#endif

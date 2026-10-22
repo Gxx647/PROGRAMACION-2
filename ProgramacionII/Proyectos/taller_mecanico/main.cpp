@@ -6,30 +6,71 @@ using namespace std;
 
 int main() {
     SistemaTaller sistema;
-    Taller datosTaller = {"Taller Central", "Av. Principal 123"}; // Ajusta según los campos de tu struct Taller
+    Taller datosTaller = {"Taller Central Uru", "J-12345678-9", "Maracaibo", "0414-1234567"};
 
-    // 1. Inicializar el sistema
+   
     inicializarSistema(sistema, datosTaller);
-    cout << "Sistema inicializado correctamente." << endl;
+    cout << "¡Sistema de Taller Mecanico inicializado correctamente!\n";
 
-    // 2. Probar el registro de un mecánico
-    Mecanico nuevoMecanico;
-    cout << "\n--- Registrar Mecanico ---" << endl;
-    cout << "Ingrese ID del mecanico: ";
-    cin >> nuevoMecanico.id; // Ajusta el campo según tu struct Mecanico
-    cout << "Ingrese Nombre del mecanico: ";
-    cin >> nuevoMecanico.nombre; // Ajusta el campo según tu struct Mecanico
+    int opcion = 0;
 
-    Mecanico* resultado = registrarMecanico(sistema, nuevoMecanico);
-    if (resultado != nullptr) {
-        cout << "¡Mecanico registrado con exito!" << endl;
-    } else {
-        cout << "Error: No se pudo registrar el mecanico (sistema lleno o duplicado)." << endl;
-    }
+    
+    do {
+        
+        cout << "    SISTEMA DE TALLER MECANICO    \n";
+        cout << "1. Registrar Vehiculo\n";
+        cout << "2. Mostrar Vehiculos\n";
+        cout << "3. Registrar Mecanico\n";
+        cout << "4. Registrar Repuesto\n";
+        cout << "5. Mostrar Repuestos\n";
+        cout << "6. Salir y liberar memoria\n";
+        cout << "Seleccione una opcion: ";
+        cin >> opcion;
 
-    // 3. Liberar memoria antes de salir
-    liberarSistema(sistema);
-    cout << "\nSistema cerrado correctamente." << endl;
+        switch (opcion) {
+            case 1:
+                registrarVehiculo(sistema);
+                break;
+            case 2:
+                mostrarVehiculos(sistema);
+                break;
+            case 3: {
+                Mecanico nuevo;
+                cin.ignore();
+                cout << "\n--- REGISTRAR MECANICO ---\n";
+                cout << "Ingrese Nombre: ";
+                cin.getline(nuevo.nombre, 100);
+                cout << "Ingrese Cedula: ";
+                cin.getline(nuevo.cedula, 20);
+                cout << "Ingrese Especialidad: ";
+                cin.getline(nuevo.especialidad, 20);
+                cout << "Ingrese Fecha de Ingreso (YYYY-MM-DD): ";
+                cin.getline(nuevo.fechaIngreso, 11);
+
+                Mecanico* resultado = registrarMecanico(sistema, nuevo);
+                if (resultado != nullptr) {
+                    cout << "¡Mecanico registrado con exito con ID #" << resultado->id << "!\n";
+                } else {
+                    cout << "Error: La cedula ya esta registrada o el sistema esta lleno.\n";
+                }
+                break;
+            }
+            case 4:
+                registrarRepuesto(sistema);
+                break;
+            case 5:
+                mostrarRepuestos(sistema);
+                break;
+            case 6:
+                
+                liberarSistema(sistema);
+                cout << "\n¡Memoria liberada con exito. Saliendo del programa!\n";
+                break;
+            default:
+                cout << "\nOpción invalida. Intente de nuevo.\n";
+        }
+
+    } while (opcion != 6);
 
     return 0;
 }
