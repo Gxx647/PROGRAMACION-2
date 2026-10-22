@@ -8,7 +8,7 @@ using namespace std;
 void menuRegistrarMecanico(SistemaTaller& s) {
     Mecanico nuevo;
 
-    cout << "\n--- REGISTRAR NUEVO MECANICO ---\n";
+    cout << "\n REGISTRAR NUEVO MECANICO \n";
     cout << "Ingrese nombre completo: ";
     cin.ignore();
     cin.getline(nuevo.nombre, 100);
@@ -27,6 +27,6 @@ void menuRegistrarMecanico(SistemaTaller& s) {
     if (resultado == nullptr) {
         cout << "ERROR: La cedula '" << nuevo.cedula << "' ya esta registrada o los datos son invalidos.\n";
     } else {
-        cout << "¡Exito! Mecanico registrado correctamente con ID #" << resultado->id << ".\n";
+        cout << "Mecanico registrado  con ID #" << resultado->id << ".\n";
     }
 }

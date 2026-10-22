@@ -22,5 +22,10 @@ void mostrarRepuestos(const SistemaTaller& s);
 void ampliarOrdenes(SistemaTaller& s);
 void crearOrdenServicio(SistemaTaller& s);
 void mostrarOrdenes(const SistemaTaller& s); 
+void agregarRepuestoAOrden(SistemaTaller& s);
+
+void cerrarOrdenServicio(SistemaTaller& s);
+
+void mostrarVehiculos(const SistemaTaller& s);
 
 #endif

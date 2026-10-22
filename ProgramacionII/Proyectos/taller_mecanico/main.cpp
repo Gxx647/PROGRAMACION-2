@@ -9,24 +9,25 @@ int main() {
     Taller datosTaller = {"Taller Central Uru", "J-12345678-9", "Maracaibo", "0414-1234567"};
 
     inicializarSistema(sistema, datosTaller);
-    cout << "¡Sistema de Taller Mecanico inicializado correctamente!\n";
+    cout << "Taller Mecanico inicializado correctamente\n";
 
     int opcion = 0;
 
     do {
-        cout << "    SISTEMA DE TALLER MECANICO    \n";
-    
+
+        cout << "    TALLER MECANICO    \n";
         cout << "1. Registrar Vehiculo\n";
         cout << "2. Mostrar Vehiculos\n";
         cout << "3. Registrar Mecanico\n";
         cout << "4. Registrar Repuesto\n";
         cout << "5. Mostrar Repuestos\n";
         cout << "6. Crear Orden de Servicio\n";
-        cout << "7. Mostrar Ordenes de Servicio\n";
-        cout << "8. Salir y liberar memoria\n";
+        cout << "7. Agregar Repuesto a Orden\n";
+        cout << "8. Cerrar y Facturar Orden\n";
+        cout << "9. Mostrar Ordenes de Servicio\n";
+        cout << "10. Salir y liberar memoria\n";
         cout << "Seleccione una opcion: ";
         
-       
         if (!(cin >> opcion)) {
             cin.clear();
             cin.ignore(10000, '\n');
@@ -34,7 +35,6 @@ int main() {
             continue;
         }
 
-        
         cin.clear();
         cin.ignore(10000, '\n');
 
@@ -49,7 +49,7 @@ int main() {
 
             case 3: {
                 Mecanico nuevo;
-                cout << "\n--- REGISTRAR MECANICO ---\n";
+                cout << "\n REGISTRAR MECANICO \n";
                 cout << "Ingrese Nombre: ";
                 cin.getline(nuevo.nombre, 100);
                 cout << "Ingrese Cedula: ";
@@ -61,7 +61,7 @@ int main() {
 
                 Mecanico* resultado = registrarMecanico(sistema, nuevo);
                 if (resultado != nullptr) {
-                    cout << "¡Mecanico registrado con exito con ID #" << resultado->id << "!\n";
+                    cout << "Mecanico registrado con exito con ID #" << resultado->id << "\n";
                 } else {
                     cout << "Error: La cedula ya esta registrada o el sistema esta lleno.\n";
                 }
@@ -81,19 +81,27 @@ int main() {
                 break;
 
             case 7:
-                mostrarOrdenes(sistema);
+                agregarRepuestoAOrden(sistema);
                 break;
 
             case 8:
+                cerrarOrdenServicio(sistema);
+                break;
+
+            case 9:
+                mostrarOrdenes(sistema);
+                break;
+
+            case 10:
                 liberarSistema(sistema);
-                cout << "\n¡Memoria liberada con exito. Saliendo del programa!\n";
+                cout << "\n Memoria liberada con exito. Saliendo del programa\n";
                 break;
 
             default:
                 cout << "\nOpcion invalida. Intente de nuevo.\n";
         }
 
-    } while (opcion != 8);
+    } while (opcion != 10);
 
     return 0;
 }
