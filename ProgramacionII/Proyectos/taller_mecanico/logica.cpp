@@ -67,16 +67,12 @@ void ampliarVehiculos(SistemaTaller& s) {
 
 
 void registrarVehiculo(SistemaTaller& s) {
-    
     if (s.numVehiculos >= s.capacidadVehiculos) {
         ampliarVehiculos(s);
     }
 
-    
     s.vehiculos[s.numVehiculos].id = s.siguienteIdVehiculo;
     s.siguienteIdVehiculo++;
-
-    std::cin.ignore(); 
 
     std::cout << "\n--- REGISTRO DE NUEVO VEHICULO ---\n";
     std::cout << "Ingrese la placa: ";
@@ -85,33 +81,15 @@ void registrarVehiculo(SistemaTaller& s) {
     std::cout << "Ingrese la marca: ";
     std::cin.getline(s.vehiculos[s.numVehiculos].marca, 50);
 
-    std::cout << "Ingrese la modelo: ";
+    std::cout << "Ingrese el modelo: ";
     std::cin.getline(s.vehiculos[s.numVehiculos].modelo, 50);
 
     std::cout << "Ingrese el año del vehiculo: ";
     std::cin >> s.vehiculos[s.numVehiculos].anio;
 
-    s.numVehiculos++; 
+    s.numVehiculos++;
     std::cout << "¡Vehiculo registrado exitosamente!\n";
 }
-
-void mostrarVehiculos(const SistemaTaller& s) {
-    std::cout << "\n--- LISTA DE VEHICULOS REGISTRADOS ---\n";
-    if (s.numVehiculos == 0) {
-        std::cout << "No hay vehiculos registrados en el sistema.\n";
-        return;
-    }
-
-   
-    for (int i = 0; i < s.numVehiculos; i++) {
-        std::cout << "ID: " << s.vehiculos[i].id
-                  << " | Placa: " << s.vehiculos[i].placa
-                  << " | Marca: " << s.vehiculos[i].marca
-                  << " | Modelo: " << s.vehiculos[i].modelo
-                  << " | Año: " << s.vehiculos[i].anio << "\n";
-    }
-}
-
 
 
 Mecanico* registrarMecanico(SistemaTaller& s, Mecanico datos) {
@@ -166,16 +144,12 @@ void ampliarRepuestos(SistemaTaller& s) {
 
 
 void registrarRepuesto(SistemaTaller& s) {
- 
     if (s.numRepuestos >= s.capacidadRepuestos) {
         ampliarRepuestos(s);
     }
 
-   
     s.repuestos[s.numRepuestos].id = s.siguienteIdRepuesto;
     s.siguienteIdRepuesto++;
-
-    std::cin.ignore(); 
 
     std::cout << "\n--- REGISTRO DE NUEVO REPUESTO ---\n";
     
@@ -197,9 +171,7 @@ void registrarRepuesto(SistemaTaller& s) {
     std::cout << "Ingrese el stock minimo de alerta: ";
     std::cin >> s.repuestos[s.numRepuestos].stockMinimo;
 
-   
     s.numRepuestos++;
-
     std::cout << "¡Repuesto registrado exitosamente en el inventario!\n";
 }
 
@@ -218,5 +190,92 @@ void mostrarRepuestos(const SistemaTaller& s) {
                   << " | Marca: " << s.repuestos[i].marca
                   << " | Precio: $" << s.repuestos[i].precio
                   << " | Stock: " << s.repuestos[i].stock << "\n";
+    }
+}
+
+
+
+
+void ampliarOrdenes(SistemaTaller& s) {
+   
+    int nuevaCapacidad = s.capacidadOrdenes * 2;
+    OrdenServicio* nuevoArreglo = new OrdenServicio[nuevaCapacidad];
+
+
+    for (int i = 0; i < s.numOrdenes; i++) {
+        nuevoArreglo[i] = s.ordenes[i];
+    }
+
+   
+    delete[] s.ordenes;
+
+   
+    s.ordenes = nuevoArreglo;
+    s.capacidadOrdenes = nuevaCapacidad;
+}
+
+
+
+void crearOrdenServicio(SistemaTaller& s) {
+    if (s.numVehiculos == 0 || s.numMecanicos == 0) {
+        std::cout << "\n[ERROR]: Debe registrar al menos un Vehiculo y un Mecanico antes de crear una orden.\n";
+        return;
+    }
+
+    if (s.numOrdenes >= s.capacidadOrdenes) {
+        ampliarOrdenes(s);
+    }
+
+    OrdenServicio& nueva = s.ordenes[s.numOrdenes];
+
+    nueva.id = s.siguienteIdOrden;
+    s.siguienteIdOrden++;
+
+    std::cout << "\n--- CREAR NUEVA ORDEN DE SERVICIO ---\n";
+
+    std::cout << "Ingrese la fecha de apertura (YYYY-MM-DD): ";
+    std::cin.getline(nueva.fechaApertura, 11);
+
+    std::cout << "Ingrese la descripcion de la falla: ";
+    std::cin.getline(nueva.descripcionFalla, 200);
+
+    std::cout << "Ingrese el kilometraje de ingreso: ";
+    std::cin >> nueva.kilometrajeIngreso;
+
+    std::cout << "Ingrese el costo de la mano de obra ($): ";
+    std::cin >> nueva.manoObra;
+
+    std::cout << "Ingrese el ID del vehiculo al que se le hara el servicio: ";
+    std::cin >> nueva.idVehiculo;
+
+    std::cout << "Ingrese el ID del mecanico asignado: ";
+    std::cin >> nueva.idMecanico;
+
+    for(int i=0; i<12; i++) nueva.estado[i] = '\0';
+    std::strcat(nueva.estado, "ABIERTA");
+
+    nueva.capacidadDetalles = 2;
+    nueva.numDetalles = 0;
+    nueva.detalles = new DetalleOrden[nueva.capacidadDetalles];
+
+    s.numOrdenes++;
+    std::cout << "¡Orden de servicio creada exitosamente con ID #" << nueva.id << "!\n";
+}
+
+void mostrarOrdenes(const SistemaTaller& s) {
+    std::cout << "\n--- LISTA DE ORDENES DE SERVICIO ---\n";
+    if (s.numOrdenes == 0) {
+        std::cout << "No hay ordenes de servicio registradas.\n";
+        return;
+    }
+
+    
+    for (int i = 0; i < s.numOrdenes; i++) {
+        std::cout << "ID Orden: " << s.ordenes[i].id
+                  << " | Estado: " << s.ordenes[i].estado
+                  << " | Vehiculo ID: " << s.ordenes[i].idVehiculo
+                  << " | Mecanico ID: " << s.ordenes[i].idMecanico
+                  << " | Falla: " << s.ordenes[i].descripcionFalla
+                  << " | Mano de Obra: $" << s.ordenes[i].manoObra << "\n";
     }
 }
