@@ -1,21 +1,23 @@
 #include <iostream>
 #include "estructura.h"
 #include "logica.h"
+#include "presentacion.h"
 
 using namespace std;
 
 int main() {
+    system("chcp 65001 > nul"); // Soporte UTF-8 para ñ y acentos
+
     SistemaTaller sistema;
     Taller datosTaller = {"Taller Central Uru", "J-12345678-9", "Maracaibo", "0414-1234567"};
 
     inicializarSistema(sistema, datosTaller);
-    cout << "Taller Mecanico inicializado correctamente\n";
+    cout << "¡Sistema de Taller Mecanico inicializado correctamente!\n";
 
     int opcion = 0;
 
     do {
-
-        cout << "    TALLER MECANICO    \n";
+        cout << "\n    TALLER MECANICO    \n";
         cout << "1. Registrar Vehiculo\n";
         cout << "2. Mostrar Vehiculos\n";
         cout << "3. Registrar Mecanico\n";
@@ -40,63 +42,36 @@ int main() {
 
         switch (opcion) {
             case 1:
-                registrarVehiculo(sistema);
+                menuRegistrarVehiculo(sistema);
                 break;
-
             case 2:
-                mostrarVehiculos(sistema);
+                menuMostrarVehiculos(sistema);
                 break;
-
-            case 3: {
-                Mecanico nuevo;
-                cout << "\n REGISTRAR MECANICO \n";
-                cout << "Ingrese Nombre: ";
-                cin.getline(nuevo.nombre, 100);
-                cout << "Ingrese Cedula: ";
-                cin.getline(nuevo.cedula, 20);
-                cout << "Ingrese Especialidad: ";
-                cin.getline(nuevo.especialidad, 20);
-                cout << "Ingrese Fecha de Ingreso (YYYY-MM-DD): ";
-                cin.getline(nuevo.fechaIngreso, 11);
-
-                Mecanico* resultado = registrarMecanico(sistema, nuevo);
-                if (resultado != nullptr) {
-                    cout << "Mecanico registrado con exito con ID #" << resultado->id << "\n";
-                } else {
-                    cout << "Error: La cedula ya esta registrada o el sistema esta lleno.\n";
-                }
+            case 3:
+                menuRegistrarMecanico(sistema);
                 break;
-            }
-
             case 4:
-                registrarRepuesto(sistema);
+                menuRegistrarRepuesto(sistema);
                 break;
-
             case 5:
-                mostrarRepuestos(sistema);
+                menuMostrarRepuestos(sistema);
                 break;
-
             case 6:
-                crearOrdenServicio(sistema);
+                menuCrearOrden(sistema);
                 break;
-
             case 7:
-                agregarRepuestoAOrden(sistema);
+                menuAgregarRepuesto(sistema);
                 break;
-
             case 8:
-                cerrarOrdenServicio(sistema);
+                menuCerrarOrden(sistema);
                 break;
-
             case 9:
-                mostrarOrdenes(sistema);
+                menuMostrarOrdenes(sistema);
                 break;
-
             case 10:
                 liberarSistema(sistema);
-                cout << "\n Memoria liberada con exito. Saliendo del programa\n";
+                cout << "\n¡Memoria liberada con exito. Saliendo del programa!\n";
                 break;
-
             default:
                 cout << "\nOpcion invalida. Intente de nuevo.\n";
         }

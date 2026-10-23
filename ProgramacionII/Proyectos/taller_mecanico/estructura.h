@@ -1,14 +1,12 @@
 #ifndef ESTRUCTURA_H
 #define ESTRUCTURA_H
 
-
 struct Taller {
     char nombre[100];
     char rif[20];
     char direccion[200];
     char telefono[20];
 };
-  
 
 struct Vehiculo {
     int id;
@@ -22,7 +20,6 @@ struct Vehiculo {
     char telefonoPropietario[20];
     char fechaRegistro[11];
 };
-
 
 struct Mecanico {
     int id;
@@ -42,7 +39,6 @@ struct Repuesto {
     int stockMinimo;
     char fechaRegistro[11];
 };
-
 
 struct DetalleOrden {
     int idRepuesto;

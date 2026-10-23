@@ -2,30 +2,18 @@
 #define LOGICA_H
 #include "estructura.h"
 
-
 void inicializarSistema(SistemaTaller& s, Taller datosTaller);
 void liberarSistema(SistemaTaller& s);
 void ampliarVehiculos(SistemaTaller& s);
-
-void registrarVehiculo(SistemaTaller& s);
-void mostrarVehiculos(const SistemaTaller& s);
-
-
-Mecanico* registrarMecanico(SistemaTaller& s, Mecanico datos);
-
-
 void ampliarRepuestos(SistemaTaller& s);
-void registrarRepuesto(SistemaTaller& s);
-void mostrarRepuestos(const SistemaTaller& s);
-
-
 void ampliarOrdenes(SistemaTaller& s);
-void crearOrdenServicio(SistemaTaller& s);
-void mostrarOrdenes(const SistemaTaller& s); 
-void agregarRepuestoAOrden(SistemaTaller& s);
 
-void cerrarOrdenServicio(SistemaTaller& s);
+bool registrarVehiculoLogica(SistemaTaller& s, const char* placa, const char* marca, const char* modelo, int anio);
+Mecanico* registrarMecanico(SistemaTaller& s, Mecanico datos);
+bool registrarRepuestoLogica(SistemaTaller& s, const char* codigo, const char* nombre, const char* marca, float precio, int stock, int stockMinimo);
 
-void mostrarVehiculos(const SistemaTaller& s);
+int crearOrdenServicioLogica(SistemaTaller& s, const char* fecha, const char* falla, int km, float manoObra, int idVehiculo, int idMecanico);
+int agregarRepuestoAOrdenLogica(SistemaTaller& s, int idOrden, int idRepuesto, int cantidad);
+int cerrarOrdenServicioLogica(SistemaTaller& s, int idOrden, double& costoRepuestosOut, double& totalPagarOut, OrdenServicio*& ordenEncontradaOut);
 
 #endif
