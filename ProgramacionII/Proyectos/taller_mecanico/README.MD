@@ -25,6 +25,6 @@ Para compilar y ejecutar el sistema de manera local, se requiere un compilador d
 
 Ejecuta el siguiente comando en la terminal desde la carpeta del proyecto:
 ```bash
-g++ main.cpp logica.cpp -o taller
+g++ main.cpp logica.cpp presentacion.cpp -o taller
 
 ./taller
