@@ -1,33 +1,56 @@
 #include <iostream>
+#include <fstream>
 #include "estructura.h"
-#include "logica.h"
+#include "persistencia.h"
+#include "mantenimiento.h"
+#include "reportes.h"
 #include "presentacion.h"
 
 using namespace std;
 
 int main() {
-    system("chcp 65001 > nul"); // Soporte UTF-8 para ñ y acentos
+    system("chcp 65001 > nul"); 
 
-    SistemaTaller sistema;
-    Taller datosTaller = {"Taller Central Uru", "J-12345678-9", "Maracaibo", "0414-1234567"};
+    
+    if (!inicializarSistemaArchivos()) {
+        cout << "[ERROR FATAL]: No se pudo inicializar el sistema de archivos en disco.\n";
+        return 1;
+    }
 
-    inicializarSistema(sistema, datosTaller);
-    cout << "¡Sistema de Taller Mecanico inicializado correctamente!\n";
+    
+    Taller datosTaller;
+    if (!existeTaller()) {
+        cout << "=== CONFIGURACION INICIAL DEL TALLER ===\n";
+        cout << "Ingrese nombre del taller: ";
+        cin.getline(datosTaller.nombre, 100);
+        cout << "Ingrese RIF: ";
+        cin.getline(datosTaller.rif, 20);
+        cout << "Ingrese direccion: ";
+        cin.getline(datosTaller.direccion, 200);
+        cout << "Ingrese telefono: ";
+        cin.getline(datosTaller.telefono, 20);
+        
+        guardarTaller(datosTaller);
+        cout << "¡Datos del taller guardados en disco exitosamente!\n";
+    } else {
+        leerTaller(datosTaller);
+    }
 
     int opcion = 0;
 
     do {
-        cout << "\n    TALLER MECANICO    \n";
-        cout << "1. Registrar Vehiculo\n";
-        cout << "2. Mostrar Vehiculos\n";
-        cout << "3. Registrar Mecanico\n";
-        cout << "4. Registrar Repuesto\n";
-        cout << "5. Mostrar Repuestos\n";
-        cout << "6. Crear Orden de Servicio\n";
-        cout << "7. Agregar Repuesto a Orden\n";
-        cout << "8. Cerrar y Facturar Orden\n";
-        cout << "9. Mostrar Ordenes de Servicio\n";
-        cout << "10. Salir y liberar memoria\n";
+        
+        cout << "\n========================================\n";
+        cout << "      SISTEMA DE GESTION DE TALLER      \n";
+        cout << " Taller: " << datosTaller.nombre << "\n";
+        cout << "========================================\n";
+        cout << "1. Gestion de Vehiculos\n";
+        cout << "2. Gestion de Mecanicos (Incluye baja)\n"; 
+        cout << "3. Inventario de Repuestos\n";
+        cout << "4. Ordenes de Servicio\n";
+        cout << "5. Reportes\n";          
+        cout << "6. Mantenimiento\n";      
+        cout << "0. Salir\n";
         cout << "Seleccione una opcion: ";
         
         if (!(cin >> opcion)) {
@@ -42,41 +65,51 @@ int main() {
 
         switch (opcion) {
             case 1:
-                menuRegistrarVehiculo(sistema);
+                
+                cout << "[En desarrollo] Modulo de Vehiculos\n";
                 break;
             case 2:
-                menuMostrarVehiculos(sistema);
+                
+                cout << "[En desarrollo] Modulo de Mecanicos\n";
                 break;
             case 3:
-                menuRegistrarMecanico(sistema);
+                
+                cout << "[En desarrollo] Modulo de Repuestos\n";
                 break;
             case 4:
-                menuRegistrarRepuesto(sistema);
+                
+                cout << "[En desarrollo] Modulo de Ordenes\n";
                 break;
             case 5:
-                menuMostrarRepuestos(sistema);
+                
+                cout << "\n--- GENERANDO REPORTES ---\n";
+                
                 break;
             case 6:
-                menuCrearOrden(sistema);
+                
+                {
+                    int opMant = 0;
+                    cout << "\n--- MENU DE MANTENIMIENTO ---\n";
+                    cout << "1. Verificar Integridad\n";
+                    cout << "2. Crear Backup\n";
+                    cout << "Seleccione: ";
+                    cin >> opMant;
+                    if (opMant == 1) {
+                        verificarIntegridad();
+                    } else if (opMant == 2) {
+                        string rutaBkp = crearBackup();
+                        cout << "Respaldo creado con exito en la carpeta: " << rutaBkp << "\n";
+                    }
+                }
                 break;
-            case 7:
-                menuAgregarRepuesto(sistema);
-                break;
-            case 8:
-                menuCerrarOrden(sistema);
-                break;
-            case 9:
-                menuMostrarOrdenes(sistema);
-                break;
-            case 10:
-                liberarSistema(sistema);
-                cout << "\n¡Memoria liberada con exito. Saliendo del programa!\n";
+            case 0:
+                cout << "\n¡Saliendo del programa! Los datos ya estan persistidos en disco.\n";
                 break;
             default:
                 cout << "\nOpcion invalida. Intente de nuevo.\n";
         }
 
-    } while (opcion != 10);
+    } while (opcion != 0);
 
     return 0;
 }
