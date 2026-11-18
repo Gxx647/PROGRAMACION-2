@@ -65,25 +65,19 @@ int main() {
 
         switch (opcion) {
             case 1:
-                
-                cout << "[En desarrollo] Modulo de Vehiculos\n";
+                submenuVehiculos();
                 break;
             case 2:
-                
-                cout << "[En desarrollo] Modulo de Mecanicos\n";
+                submenuMecanicos();
                 break;
             case 3:
-                
-                cout << "[En desarrollo] Modulo de Repuestos\n";
+                submenuRepuestos();
                 break;
             case 4:
-                
-                cout << "[En desarrollo] Modulo de Ordenes\n";
+                submenuOrdenes();
                 break;
             case 5:
-                
-                cout << "\n--- GENERANDO REPORTES ---\n";
-                
+                cout << "[En desarrollo] Modulo De Reportes.\n";
                 break;
             case 6:
                 
@@ -94,6 +88,8 @@ int main() {
                     cout << "2. Crear Backup\n";
                     cout << "Seleccione: ";
                     cin >> opMant;
+                    cin.clear();
+                    cin.ignore(10000, '\n');
                     if (opMant == 1) {
                         verificarIntegridad();
                     } else if (opMant == 2) {

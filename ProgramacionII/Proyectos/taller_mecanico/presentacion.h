@@ -3,14 +3,33 @@
 
 #include "estructura.h"
 
-void menuRegistrarVehiculo(SistemaTaller& s);
-void menuRegistrarMecanico(SistemaTaller& s);
-void menuRegistrarRepuesto(SistemaTaller& s);
-void menuMostrarRepuestos(const SistemaTaller& s);
-void menuCrearOrden(SistemaTaller& s);
-void menuAgregarRepuesto(SistemaTaller& s);
-void menuCerrarOrden(SistemaTaller& s);
-void menuMostrarOrdenes(const SistemaTaller& s);
-void menuMostrarVehiculos(const SistemaTaller& s);
+// --- Submenus Principales ---
+
+void submenuVehiculos();
+void submenuMecanicos();
+void submenuRepuestos();
+void submenuOrdenes();
+
+// --- Funciones individuales de Vehiculos ---
+
+void menuRegistrarVehiculos();
+void menuMotrarVehiculo();
+
+// --- Funciones individuales de los Mecanicos ---
+
+void menuRegistrarMecanico();
+void menuMostrarMecanico();
+
+// --- Funciones individuales de Repuestos ---
+
+void menuRegistrarRepuesto();
+void mostrarRepuestos();
+
+// --- Funciones individuales de Ordenes ---
+
+void menuCrearOrden();
+void menuAgregarRepuestos();
+void menuCerrarOrden();
+void menuMostrarOrdenes();
 
 #endif

@@ -1,244 +1,305 @@
 #include "logica.h"
+#include "persistencia.h"
 #include <cstring>
+#include <ctime>
 
-void inicializarSistema(SistemaTaller& s, Taller datosTaller) {
-    s.taller = datosTaller;
+using namespace std;
 
-    s.capacidadVehiculos = 4;
-    s.capacidadMecanicos = 4;
-    s.capacidadRepuestos = 4;
-    s.capacidadOrdenes = 4;
-
-    s.vehiculos = new Vehiculo[s.capacidadVehiculos];
-    s.mecanicos = new Mecanico[s.capacidadMecanicos];
-    s.repuestos = new Repuesto[s.capacidadRepuestos];
-    s.ordenes = new OrdenServicio[s.capacidadOrdenes];
-
-    s.numVehiculos = 0; 
-    s.numMecanicos = 0;
-    s.numRepuestos = 0;
-    s.numOrdenes = 0;
-
-    s.siguienteIdVehiculo = 1;
-    s.siguienteIdMecanico = 1;
-    s.siguienteIdRepuesto = 1;
-    s.siguienteIdOrden = 1;
-}
-
-void liberarSistema(SistemaTaller& s) {
-    for (int i = 0; i < s.numOrdenes; i++) {
-        delete[] s.ordenes[i].detalles;
+bool especialidadValida(const char* especialidad) {
+    const char* permitidas[5] = {"Motor", "Frenos", "Electricidad", "Suspension", "General"};
+    for (int i = 0; i < 5; i++) {
+        if (strcmp(especialidad, permitidas[i]) == 0){
+            return true;
+        }
     }
-    delete[] s.vehiculos;
-    delete[] s.mecanicos;
-    delete[] s.repuestos;
-    delete[] s.ordenes;
+    return false;
 }
 
-void ampliarVehiculos(SistemaTaller& s) {
-    int nuevaCapacidad = s.capacidadVehiculos * 2;
-    Vehiculo* nuevoArreglo = new Vehiculo[nuevaCapacidad];
-    for (int i = 0; i < s.numVehiculos; i++) {
-        nuevoArreglo[i] = s.vehiculos[i];
+// ======================= VEHICULOS =======================
+
+int registrarVehiculoLogica(const char* placa, const char* marca, const char* modelo, int anio, int kilometraje, const char* nombrePropietario, const char* cedulaPropietario, const char* telefonoPropietario) {
+    if (anio < 1950 || anio > 2027) {
+        return -3;
     }
-    delete[] s.vehiculos;
-    s.vehiculos = nuevoArreglo;
-    s.capacidadVehiculos = nuevaCapacidad;
-}
-
-bool registrarVehiculoLogica(SistemaTaller& s, const char* placa, const char* marca, const char* modelo, int anio) {
-    if (s.numVehiculos >= s.capacidadVehiculos) {
-        ampliarVehiculos(s);
+    if (kilometraje < 0) {
+        return -4;
     }
 
-    s.vehiculos[s.numVehiculos].id = s.siguienteIdVehiculo;
-    s.siguienteIdVehiculo++;
-
-    std::strncpy(s.vehiculos[s.numVehiculos].placa, placa, 9);
-    s.vehiculos[s.numVehiculos].placa[9] = '\0';
-    std::strncpy(s.vehiculos[s.numVehiculos].marca, marca, 49);
-    s.vehiculos[s.numVehiculos].marca[49] = '\0';
-    std::strncpy(s.vehiculos[s.numVehiculos].modelo, modelo, 49);
-    s.vehiculos[s.numVehiculos].modelo[49] = '\0';
-    s.vehiculos[s.numVehiculos].anio = anio;
-
-    s.numVehiculos++;
-    return true;
-}
-
-Mecanico* registrarMecanico(SistemaTaller& s, Mecanico datos) {
-    for (int i = 0; i < s.numMecanicos; i++) {
-        if (strcmp(s.mecanicos[i].cedula, datos.cedula) == 0) {
-            return nullptr; 
+    // Buscar si la placa ya existe entre los vehiculos activos (un registro a la vez)
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_VEHICULOS, header)) {
+        return -1;
+    }
+    Vehiculo existente;
+    for (int i = 1; i <= header.cantidadRegistros; i++) {
+        if (leerRegistroPorID(RUTA_VEHICULOS, i, existente)) {
+            if (!existente.eliminado && strcmp(existente.placa, placa) == 0) {
+                return -2;
+            }
         }
     }
 
-    if (s.numMecanicos >= s.capacidadMecanicos) {
-        s.capacidadMecanicos *= 2; 
-        Mecanico* nuevoArreglo = new Mecanico[s.capacidadMecanicos];
-        for (int i = 0; i < s.numMecanicos; i++) {
-            nuevoArreglo[i] = s.mecanicos[i];
+    Vehiculo nuevo;
+    memset(&nuevo, 0, sizeof(Vehiculo)); // deja todo en cero antes de llenarlo
+
+    strncpy(nuevo.placa, placa, 9);
+    nuevo.placa[9] = '\0';
+    strncpy(nuevo.marca, marca, 49);
+    nuevo.marca[49] = '\0';
+    strncpy(nuevo.modelo, modelo, 49);
+    nuevo.modelo[49] = '\0';
+    nuevo.anio = anio;
+    nuevo.kilometraje = kilometraje;
+    strncpy(nuevo.nombrePropietario, nombrePropietario, 99);
+    nuevo.nombrePropietario[99] = '\0';
+    strncpy(nuevo.cedulaPropietario, cedulaPropietario, 19);
+    nuevo.cedulaPropietario[19] = '\0';
+    strncpy(nuevo.telefonoPropietario, telefonoPropietario, 19);
+    nuevo.telefonoPropietario[19] = '\0';
+
+    return guardarRegistro(RUTA_VEHICULOS, nuevo); // retorna el ID asignado, o -1
+}
+
+// ======================= MECANICOS =======================
+
+int registrarMecanico(Mecanico datos) {
+    datos.nombre[99] = '\0';
+    datos.cedula[19] = '\0';
+    datos.especialidad[19] = '\0';
+    datos.fechaIngreso[10] = '\0';
+
+    if (!especialidadValida(datos.especialidad)) {
+        return -3;
+    }
+
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_MECANICOS, header)) {
+        return -1;
+    }
+
+    Mecanico existente;
+    for (int i = 1; i <= header.cantidadRegistros; i++) {
+        if (leerRegistroPorID(RUTA_MECANICOS, i, existente)) {
+            if (!existente.eliminado && strcmp(existente.cedula, datos.cedula) == 0) {
+                return -2;
+            }
         }
-        delete[] s.mecanicos;
-        s.mecanicos = nuevoArreglo;
     }
 
-    datos.id = s.siguienteIdMecanico;
-    s.siguienteIdMecanico++;
-
-    s.mecanicos[s.numMecanicos] = datos;
-    s.numMecanicos++;
-
-    return &s.mecanicos[s.numMecanicos - 1]; 
+    return guardarRegistro(RUTA_MECANICOS, datos); // retorna el ID asignado, o -1
 }
 
-void ampliarRepuestos(SistemaTaller& s) {
-    int nuevaCapacidad = s.capacidadRepuestos * 2;
-    Repuesto* nuevoArreglo = new Repuesto[nuevaCapacidad];
-    for (int i = 0; i < s.numRepuestos; i++) {
-        nuevoArreglo[i] = s.repuestos[i];
+// ======================= REPUESTOS =======================
+
+int registrarRepuestoLogica(const char* codigo, const char* nombre, const char* marca, float precio, int stock, int stockMinimo) {
+    if (precio <= 0){
+        return -3;
     }
-    delete[] s.repuestos;
-    s.repuestos = nuevoArreglo;
-    s.capacidadRepuestos = nuevaCapacidad;
+    if (stock < 0){
+        return -4;
+    }
+    if (stockMinimo < 0) {
+        return -5;
+    }
+
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_REPUESTOS, header)){
+        return -1;
+    }
+
+    Repuesto existente;
+    for (int i = 1; i <= header.cantidadRegistros; i++) {
+        if (leerRegistroPorID(RUTA_REPUESTOS, i, existente)) {
+            if (!existente.eliminado && strcmp(existente.codigo, codigo) == 0) {
+                return -2;
+            }
+        }
+    }
+
+    Repuesto nuevo;
+    memset(&nuevo, 0, sizeof(Repuesto));
+
+    strncpy(nuevo.codigo, codigo, 19);
+    nuevo.codigo[19] = '\0';
+    strncpy(nuevo.nombre, nombre, 99);
+    nuevo.nombre[99] = '\0';
+    strncpy(nuevo.marca, marca, 49);
+    nuevo.marca[49] = '\0';
+    nuevo.precio = precio;
+    nuevo.stock = stock;
+    nuevo.stockMinimo = stockMinimo;
+
+    return guardarRegistro(RUTA_REPUESTOS, nuevo); // retorna el ID asignado, o -1
 }
 
-bool registrarRepuestoLogica(SistemaTaller& s, const char* codigo, const char* nombre, const char* marca, float precio, int stock, int stockMinimo) {
-    if (s.numRepuestos >= s.capacidadRepuestos) {
-        ampliarRepuestos(s);
+// ======================= ORDENES =======================
+
+int crearOrdenServicioLogica(const char* fecha, const char* falla, int km, int idVehiculo, int idMecanico) {
+    // ---- Validaciones (no se escribe nada hasta que todas pasen) ----
+    Vehiculo veh;
+    if (idVehiculo <= 0 || !leerRegistroPorID(RUTA_VEHICULOS, idVehiculo, veh)) {
+        return -2;
+    }
+    if (veh.eliminado) {
+        return -3;
     }
 
-    s.repuestos[s.numRepuestos].id = s.siguienteIdRepuesto;
-    s.siguienteIdRepuesto++;
-
-    std::strncpy(s.repuestos[s.numRepuestos].codigo, codigo, 19);
-    s.repuestos[s.numRepuestos].codigo[19] = '\0';
-    std::strncpy(s.repuestos[s.numRepuestos].nombre, nombre, 99);
-    s.repuestos[s.numRepuestos].nombre[99] = '\0';
-    std::strncpy(s.repuestos[s.numRepuestos].marca, marca, 49);
-    s.repuestos[s.numRepuestos].marca[49] = '\0';
-    s.repuestos[s.numRepuestos].precio = precio;
-    s.repuestos[s.numRepuestos].stock = stock;
-    s.repuestos[s.numRepuestos].stockMinimo = stockMinimo;
-
-    s.numRepuestos++;
-    return true;
-}
-
-void ampliarOrdenes(SistemaTaller& s) {
-    int nuevaCapacidad = s.capacidadOrdenes * 2;
-    OrdenServicio* nuevoArreglo = new OrdenServicio[nuevaCapacidad];
-    for (int i = 0; i < s.numOrdenes; i++) {
-        nuevoArreglo[i] = s.ordenes[i];
+    Mecanico mec;
+    if (idMecanico <= 0 || !leerRegistroPorID(RUTA_MECANICOS, idMecanico, mec)) {
+        return -4;
     }
-    delete[] s.ordenes;
-    s.ordenes = nuevoArreglo;
-    s.capacidadOrdenes = nuevaCapacidad;
-}
-
-int crearOrdenServicioLogica(SistemaTaller& s, const char* fecha, const char* falla, int km, float manoObra, int idVehiculo, int idMecanico) {
-    if (s.numVehiculos == 0 || s.numMecanicos == 0) return -1; 
-
-    if (s.numOrdenes >= s.capacidadOrdenes) {
-        ampliarOrdenes(s);
+    if (mec.eliminado) {
+        return -5;
     }
+    // Recorrer las ordenes de a una: contar abiertas del vehiculo y del mecanico
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_ORDENES, header)) {
+        return -1;
+    }
+    int abiertasMecanico = 0;
+    OrdenServicio existente;
+    for (int i = 1; i <= header.cantidadRegistros; i++) {
+        if (leerRegistroPorID(RUTA_ORDENES, i, existente)) {
+            if (strcmp(existente.estado, "ABIERTA") == 0) {
+                if (existente.idVehiculo == idVehiculo) {
+                    return -6;
+                }
+                if (existente.idMecanico == idMecanico) {
+                    abiertasMecanico++;
+                }
+            }
+        }
+    }
+    if (abiertasMecanico >= MAX_ORDENES_ABIERTAS_MECANICO) {
+        return -7;
+    }
+    if (km < veh.kilometraje) {
+        return -8;
+    }
+    // ---- Escrituras: primero la orden, luego el kilometraje del vehiculo ----
+    OrdenServicio nueva;
+    memset(&nueva, 0, sizeof(OrdenServicio));
 
-    OrdenServicio& nueva = s.ordenes[s.numOrdenes];
-    nueva.id = s.siguienteIdOrden;
-    s.siguienteIdOrden++;
-
-    std::strncpy(nueva.fechaApertura, fecha, 10);
-    nueva.fechaApertura[10] = '\0';
-    std::strncpy(nueva.descripcionFalla, falla, 199);
-    nueva.descripcionFalla[199] = '\0';
-    nueva.kilometrajeIngreso = km;
-    nueva.manoObra = manoObra;
     nueva.idVehiculo = idVehiculo;
     nueva.idMecanico = idMecanico;
+    strncpy(nueva.fechaApertura, fecha, 10);
+    nueva.fechaApertura[10] = '\0';
+    strncpy(nueva.descripcionFalla, falla, 199);
+    nueva.descripcionFalla[199] = '\0';
+    strcpy(nueva.estado, "ABIERTA");
+    nueva.kilometrajeIngreso = km;
+    nueva.manoObra = 0;
+    nueva.totalLineas = 0;
 
-    for(int i=0; i<12; i++) nueva.estado[i] = '\0';
-    std::strcat(nueva.estado, "ABIERTA");
+    int idOrden = guardarRegistro(RUTA_ORDENES, nueva);
+    if (idOrden < 0) {
+        return -1;
+    }
 
-    nueva.capacidadDetalles = 2;
-    nueva.numDetalles = 0;
-    nueva.detalles = new DetalleOrden[nueva.capacidadDetalles];
-
-    s.numOrdenes++;
-    return nueva.id;
+    veh.kilometraje = km;
+    if (!sobrescribirRegistro(RUTA_VEHICULOS, idVehiculo, veh)) {
+    return -1;
+}
+    return idOrden;
 }
 
-int agregarRepuestoAOrdenLogica(SistemaTaller& s, int idOrden, int idRepuesto, int cantidad) {
-    if (s.numOrdenes == 0) return -1; 
-    if (s.numRepuestos == 0) return -2; 
+int agregarRepuestoAOrdenLogica(int idOrden, int idRepuesto, int cantidad) {
+    if (cantidad <= 0) {
+        return -6;
+    }
 
-    OrdenServicio* ordenEncontrada = nullptr;
-    for (int i = 0; i < s.numOrdenes; i++) {
-        if (s.ordenes[i].id == idOrden) {
-            ordenEncontrada = &s.ordenes[i];
+    OrdenServicio orden;
+    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, orden)) {
+        return -3;
+    }
+    if (strcmp(orden.estado, "ABIERTA") != 0) {
+        return -4;
+    }
+
+    Repuesto rep;
+    if (idRepuesto <= 0 || !leerRegistroPorID(RUTA_REPUESTOS, idRepuesto, rep)) {
+        return -5;
+    }
+    if (rep.eliminado) {
+        return -5;
+    }
+    if (rep.stock < cantidad) {
+        return -7;
+    }
+
+    // Buscar si el repuesto ya esta en la orden
+    int posLinea = -1;
+    for (int i = 0; i < orden.totalLineas; i++) {
+        if (orden.lineasDetalle[i].idRepuesto == idRepuesto) {
+            posLinea = i;
             break;
         }
     }
-    if (ordenEncontrada == nullptr) return -3; // Orden no encontrada
-    if (std::strcmp(ordenEncontrada->estado, "ABIERTA") != 0) return -4; // Orden ya cerrada
 
-    Repuesto* repuestoEncontrado = nullptr;
-    for (int i = 0; i < s.numRepuestos; i++) {
-        if (s.repuestos[i].id == idRepuesto) {
-            repuestoEncontrado = &s.repuestos[i];
-            break;
+    if (posLinea == -1) {
+        // Linea nueva
+        if (orden.totalLineas >= MAX_LINEAS_DETALLE) {
+            return -8;
         }
-    }
-    if (repuestoEncontrado == nullptr) return -5; 
-    if (cantidad <= 0) return -6; 
-    if (repuestoEncontrado->stock < cantidad) return -7; 
 
-    if (ordenEncontrada->numDetalles >= ordenEncontrada->capacidadDetalles) {
-        ordenEncontrada->capacidadDetalles *= 2;
-        DetalleOrden* nuevosDetalles = new DetalleOrden[ordenEncontrada->capacidadDetalles];
-        for (int i = 0; i < ordenEncontrada->numDetalles; i++) {
-            nuevosDetalles[i] = ordenEncontrada->detalles[i];
-        }
-        delete[] ordenEncontrada->detalles;
-        ordenEncontrada->detalles = nuevosDetalles;
+        posLinea = orden.totalLineas;
+        orden.lineasDetalle[posLinea].idRepuesto = rep.id;
+        strncpy(orden.lineasDetalle[posLinea].codigoRepuesto, rep.codigo, 19);
+        orden.lineasDetalle[posLinea].codigoRepuesto[19] = '\0';
+        strncpy(orden.lineasDetalle[posLinea].nombreRepuesto, rep.nombre, 99);
+        orden.lineasDetalle[posLinea].nombreRepuesto[99] = '\0';
+        orden.lineasDetalle[posLinea].cantidad = cantidad;
+        orden.lineasDetalle[posLinea].precioHistorico = rep.precio;
+        orden.lineasDetalle[posLinea].activo = true;
+        orden.totalLineas++;
+    } else {
+        // Ya existia: se acumula y se conserva su precio historico
+        orden.lineasDetalle[posLinea].cantidad += cantidad;
     }
 
-    DetalleOrden& det = ordenEncontrada->detalles[ordenEncontrada->numDetalles];
-    det.idRepuesto = repuestoEncontrado->id;
-    det.cantidad = cantidad;
-    det.precioUnitario = repuestoEncontrado->precio;
+    // ---- Escrituras: primero la orden (detalle), despues el stock ----
+    if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, orden)) {
+        return -1;
+    }
 
-    repuestoEncontrado->stock -= cantidad;
-    ordenEncontrada->numDetalles++;
+    rep.stock -= cantidad;
+    if (!sobrescribirRegistro(RUTA_REPUESTOS, idRepuesto, rep)) {
+        return -1;
+    }
 
-    return 1; // Éxito
+    return 1;
 }
 
-int cerrarOrdenServicioLogica(SistemaTaller& s, int idOrden, double& costoRepuestosOut, double& totalPagarOut, OrdenServicio*& ordenEncontradaOut) {
-    if (s.numOrdenes == 0) return -1;
-
-    OrdenServicio* ordenEncontrada = nullptr;
-    for (int i = 0; i < s.numOrdenes; i++) {
-        if (s.ordenes[i].id == idOrden) {
-            ordenEncontrada = &s.ordenes[i];
-            break;
-        }
+int cerrarOrdenServicioLogica(int idOrden, float manoObra, double& costoRepuestosOut, double& totalPagarOut, OrdenServicio& ordenOut) {
+    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, ordenOut)) {
+        return -2;
     }
-    if (ordenEncontrada == nullptr) return -2;
-    if (std::strcmp(ordenEncontrada->estado, "CERRADA") == 0) return -3;
-
-    for (int i = 0; i < 12; i++) ordenEncontrada->estado[i] = '\0';
-    std::strcat(ordenEncontrada->estado, "CERRADA");
+    if (strcmp(ordenOut.estado, "ABIERTA") != 0) {
+        return -3;
+    }
+    if (manoObra < 0) {
+        return -4;
+    }
+    if (ordenOut.totalLineas == 0 && manoObra <= 0) {
+        return -5;
+    }
 
     double costoRepuestos = 0.0;
-    for (int i = 0; i < ordenEncontrada->numDetalles; i++) {
-        costoRepuestos += ordenEncontrada->detalles[i].cantidad * ordenEncontrada->detalles[i].precioUnitario;
+    for (int i = 0; i < ordenOut.totalLineas; i++) {
+        costoRepuestos += ordenOut.lineasDetalle[i].cantidad * ordenOut.lineasDetalle[i].precioHistorico;
     }
 
-    double totalPagar = ordenEncontrada->manoObra + costoRepuestos;
+    ordenOut.manoObra = manoObra;
+    strcpy(ordenOut.estado, "CERRADA");
+
+    time_t ahora = time(nullptr);
+    strftime(ordenOut.fechaCierre, 11, "%Y-%m-%d", localtime(&ahora));
+
+    if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, ordenOut)) {
+        return -1;
+    }
 
     costoRepuestosOut = costoRepuestos;
-    totalPagarOut = totalPagar;
-    ordenEncontradaOut = ordenEncontrada;
-
-    return 1; 
+    totalPagarOut = manoObra + costoRepuestos;
+    return 1;
 }
