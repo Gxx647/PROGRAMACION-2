@@ -42,6 +42,12 @@ bool actualizarHeader(const std::string& ruta, const ArchivoHeader& header) {
     return true;
 }
 
+int contarActivos(const std::string& ruta) {
+    ArchivoHeader header;
+    if (!leerHeader(ruta, header)) return -1;
+    return header.registrosActivos;
+}
+
 bool inicializarSistemaArchivos() {
     if (!fs::exists("datos")) {
         fs::create_directory("datos");

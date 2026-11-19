@@ -17,11 +17,14 @@ bool inicializarArchivoHeader(const std::string& ruta);
 bool leerHeader(const std::string& ruta, ArchivoHeader& headerOut);
 bool actualizarHeader(const std::string& ruta, const ArchivoHeader& header);
 
+
+int contarActivos(const std::string& ruta);
+
 bool existeTaller();
 bool guardarTaller(const Taller& t);
 bool leerTaller(Taller& tOut);
 
-// Templates de persistencia para acceso aleatorio
+
 template <typename T>
 int guardarRegistro(const std::string& rutaEntidad, T& registro) {
     ArchivoHeader header;
@@ -46,8 +49,15 @@ int guardarRegistro(const std::string& rutaEntidad, T& registro) {
     return registro.id;
 }
 
+
 template <typename T>
-bool leerRegistroPorID(const std::string& rutaEntidad, int id, T& registroOut) {
+long long posicionRegistro(int id) {
+    return static_cast<long long>(sizeof(ArchivoHeader)) + static_cast<long long>(id - 1) * static_cast<long long>(sizeof(T));
+}
+
+
+template <typename T>
+bool leerRegistroPorID(const std::string& rutaEntidad, int id, T& registroOut, long long* posicionOut = nullptr) {
     if (id <= 0) return false;
 
     std::ifstream archivo(rutaEntidad, std::ios::binary);
@@ -56,12 +66,14 @@ bool leerRegistroPorID(const std::string& rutaEntidad, int id, T& registroOut) {
     ArchivoHeader header;
     if (!leerHeader(rutaEntidad, header)) return false;
 
-    long long posicion = sizeof(ArchivoHeader) + static_cast<long long>(id - 1) * sizeof(T);
+    long long posicion = posicionRegistro<T>(id);
     archivo.seekg(posicion, std::ios::beg);
     if (!archivo) return false;
 
     archivo.read(reinterpret_cast<char*>(&registroOut), sizeof(T));
     if (!archivo) return false;
+
+    if (posicionOut != nullptr) *posicionOut = posicion;
 
     archivo.close();
     return archivo.good();
@@ -72,7 +84,7 @@ bool sobrescribirRegistro(const std::string& rutaEntidad, int id, const T& regis
     std::fstream archivo(rutaEntidad, std::ios::binary | std::ios::in | std::ios::out);
     if (!archivo.is_open()) return false;
 
-    long long posicion = sizeof(ArchivoHeader) + static_cast<long long>(id - 1) * sizeof(T);
+    long long posicion = posicionRegistro<T>(id);
     archivo.seekp(posicion, std::ios::beg);
     
     T regCopia = registroModificado;

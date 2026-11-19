@@ -2,8 +2,37 @@
 #include "persistencia.h"
 #include <cstring>
 #include <ctime>
+#include <cctype>
 
 using namespace std;
+
+namespace
+{
+
+    bool contieneIgnorandoMayusculas(const char *texto, const char *patron)
+    {
+        int lenTexto = static_cast<int>(strlen(texto));
+        int lenPatron = static_cast<int>(strlen(patron));
+        if (lenPatron == 0)
+        {
+            return false;
+        }
+        for (int i = 0; i + lenPatron <= lenTexto; i++)
+        {
+            int j = 0;
+            while (j < lenPatron &&
+                   tolower(static_cast<unsigned char>(texto[i + j])) == tolower(static_cast<unsigned char>(patron[j])))
+            {
+                j++;
+            }
+            if (j == lenPatron)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+}
 
 bool especialidadValida(const char *especialidad)
 {
@@ -648,5 +677,196 @@ int anularOrdenLogica(int idOrden, OrdenServicio &ordenOut)
         }
     }
 
+    return 1;
+}
+
+// ======================= CONSULTAS Y BUSQUEDAS =======================
+
+int obtenerVehiculoPorIDLogica(int idVehiculo, Vehiculo &vehOut, long long &posicionOut)
+{
+    // La persistencia entrega el registro aunque este eliminado y nos dice en que byte lo leyo.
+    if (idVehiculo <= 0 || !leerRegistroPorID(RUTA_VEHICULOS, idVehiculo, vehOut, &posicionOut))
+    {
+        return -2;
+    }
+    // Decidir si un eliminado "sirve" es regla de negocio: por eso -3 y no -2.
+    if (vehOut.eliminado)
+    {
+        return -3;
+    }
+    return 1;
+}
+
+int obtenerVehiculoPorPlacaLogica(const char *placa, Vehiculo &vehOut)
+{
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_VEHICULOS, header))
+    {
+        return -1;
+    }
+    // Busqueda por otro campo: se recorre el archivo con UN solo registro en memoria a la vez.
+    for (int i = 1; i <= header.cantidadRegistros; i++)
+    {
+        Vehiculo actual;
+        if (leerRegistroPorID(RUTA_VEHICULOS, i, actual) && !actual.eliminado &&
+            strcmp(actual.placa, placa) == 0)
+        {
+            vehOut = actual;
+            return 1;
+        }
+    }
+    return -2;
+}
+
+int buscarVehiculosPorPropietarioLogica(const char *texto, Vehiculo resultados[], int &cantidadOut, bool &hayMasOut)
+{
+    cantidadOut = 0;
+    hayMasOut = false;
+    if (texto[0] == '\0')
+    {
+        return -2;
+    }
+
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_VEHICULOS, header))
+    {
+        return -1;
+    }
+
+    for (int i = 1; i <= header.cantidadRegistros; i++)
+    {
+        Vehiculo actual;
+        if (!leerRegistroPorID(RUTA_VEHICULOS, i, actual) || actual.eliminado ||
+            !contieneIgnorandoMayusculas(actual.nombrePropietario, texto))
+        {
+            continue;
+        }
+        if (cantidadOut == MAX_RESULTADOS_BUSQUEDA)
+        {
+            // Ya tenemos el maximo y aparece otra coincidencia: hay mas. Dejamos de leer.
+            hayMasOut = true;
+            break;
+        }
+        resultados[cantidadOut] = actual;
+        cantidadOut++;
+    }
+    return 1;
+}
+
+int cantidadVehiculosActivosLogica()
+{
+    return contarActivos(RUTA_VEHICULOS);
+}
+
+int obtenerMecanicoPorIDLogica(int idMecanico, Mecanico &mecOut)
+{
+    if (idMecanico <= 0 || !leerRegistroPorID(RUTA_MECANICOS, idMecanico, mecOut))
+    {
+        return -2;
+    }
+    if (mecOut.eliminado)
+    {
+        return -3;
+    }
+    return 1;
+}
+
+int obtenerRepuestoPorIDLogica(int idRepuesto, Repuesto &repOut)
+{
+    if (idRepuesto <= 0 || !leerRegistroPorID(RUTA_REPUESTOS, idRepuesto, repOut))
+    {
+        return -2;
+    }
+    // Para repuestos el enunciado dice "solo activos": un eliminado se trata como inexistente.
+    if (repOut.eliminado)
+    {
+        return -2;
+    }
+    return 1;
+}
+
+int buscarRepuestosLogica(const char *texto, Repuesto resultados[], int &cantidadOut, bool &hayMasOut)
+{
+    cantidadOut = 0;
+    hayMasOut = false;
+    if (texto[0] == '\0')
+    {
+        return -2;
+    }
+
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_REPUESTOS, header))
+    {
+        return -1;
+    }
+
+    for (int i = 1; i <= header.cantidadRegistros; i++)
+    {
+        Repuesto actual;
+        if (!leerRegistroPorID(RUTA_REPUESTOS, i, actual) || actual.eliminado)
+        {
+            continue;
+        }
+        if (!contieneIgnorandoMayusculas(actual.codigo, texto) &&
+            !contieneIgnorandoMayusculas(actual.nombre, texto))
+        {
+            continue;
+        }
+        if (cantidadOut == MAX_RESULTADOS_BUSQUEDA)
+        {
+            hayMasOut = true;
+            break;
+        }
+        resultados[cantidadOut] = actual;
+        cantidadOut++;
+    }
+    return 1;
+}
+
+int cantidadRepuestosActivosLogica()
+{
+    return contarActivos(RUTA_REPUESTOS);
+}
+
+int obtenerOrdenPorIDLogica(int idOrden, OrdenServicio &ordenOut)
+{
+    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, ordenOut))
+    {
+        return -2;
+    }
+    return 1;
+}
+
+int listarOrdenesPorEstadoLogica(const char *estado, OrdenServicio resultados[], int &cantidadOut, bool &hayMasOut)
+{
+    cantidadOut = 0;
+    hayMasOut = false;
+    if (strcmp(estado, "ABIERTA") != 0 && strcmp(estado, "CERRADA") != 0 && strcmp(estado, "ANULADA") != 0)
+    {
+        return -2;
+    }
+
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_ORDENES, header))
+    {
+        return -1;
+    }
+
+    for (int i = 1; i <= header.cantidadRegistros; i++)
+    {
+        OrdenServicio actual;
+        if (!leerRegistroPorID(RUTA_ORDENES, i, actual) || actual.eliminado ||
+            strcmp(actual.estado, estado) != 0)
+        {
+            continue;
+        }
+        if (cantidadOut == MAX_RESULTADOS_BUSQUEDA)
+        {
+            hayMasOut = true;
+            break;
+        }
+        resultados[cantidadOut] = actual;
+        cantidadOut++;
+    }
     return 1;
 }

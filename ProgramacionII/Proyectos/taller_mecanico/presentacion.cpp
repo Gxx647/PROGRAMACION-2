@@ -3,8 +3,33 @@
 #include "persistencia.h"
 #include <iostream>
 #include <cstring>
+#include <cctype>
 
 using namespace std;
+
+namespace {
+    // Pregunta si los datos escritos son correctos y repite la pregunta hasta recibir
+    // una respuesta valida. true = Si (1, s, si). false = No (2, n, no).
+    bool confirmarDatos() {
+        char resp[20];
+        while (true) {
+            cout << "\nLos datos estan correctos? (1 = Si, continuar | 2 = No, escribirlos de nuevo): ";
+            cin.getline(resp, 20);
+            if (cin.eof()) return false;
+            if (cin.fail()) {
+                cin.clear();
+                cin.ignore(10000, '\n');
+                continue;
+            }
+            for (int i = 0; resp[i] != '\0'; i++) {
+                resp[i] = static_cast<char>(tolower(static_cast<unsigned char>(resp[i])));
+            }
+            if (strcmp(resp, "1") == 0 || strcmp(resp, "s") == 0 || strcmp(resp, "si") == 0) return true;
+            if (strcmp(resp, "2") == 0 || strcmp(resp, "n") == 0 || strcmp(resp, "no") == 0) return false;
+            cout << "[ERROR]: Responda 1 (Si) o 2 (No).\n";
+        }
+    }
+}
 
 void mostrarVehiculo(const Vehiculo &v) {
     cout << "ID: " << v.id
@@ -64,19 +89,32 @@ void mostrarOrden(const OrdenServicio &o) {
 void menuRegistrarVehiculo() {
     char placa[10], marca[50], modelo[50];
     char nombreProp[100], cedulaProp[20], telefonoProp[20];
-    int anio, km;
+    int anio = 0, km = 0;
+    bool confirmado = false;
 
     cout << "\n--- REGISTRO DE NUEVO VEHICULO ---\n";
-    cout << "Placa: ";                    cin.getline(placa, 10);
-    cout << "Marca: ";                    cin.getline(marca, 50);
-    cout << "Modelo: ";                   cin.getline(modelo, 50);
-    cout << "Anio (1950-2027): ";         cin >> anio;
-    cin.clear(); cin.ignore(10000, '\n');
-    cout << "Kilometraje: ";              cin >> km;
-    cin.clear(); cin.ignore(10000, '\n');
-    cout << "Nombre del propietario: ";   cin.getline(nombreProp, 100);
-    cout << "Cedula del propietario: ";   cin.getline(cedulaProp, 20);
-    cout << "Telefono del propietario: "; cin.getline(telefonoProp, 20);
+    while (!confirmado) {
+        cout << "Placa: ";                    cin.getline(placa, 10);
+        cout << "Marca: ";                    cin.getline(marca, 50);
+        cout << "Modelo: ";                   cin.getline(modelo, 50);
+        cout << "Anio (1950-2027): ";         cin >> anio;
+        cin.clear(); cin.ignore(10000, '\n');
+        cout << "Kilometraje: ";              cin >> km;
+        cin.clear(); cin.ignore(10000, '\n');
+        cout << "Nombre del propietario: ";   cin.getline(nombreProp, 100);
+        cout << "Cedula del propietario: ";   cin.getline(cedulaProp, 20);
+        cout << "Telefono del propietario: "; cin.getline(telefonoProp, 20);
+
+        cout << "\n--- RESUMEN DEL VEHICULO ---\n";
+        cout << "Placa: " << placa << " | " << marca << " " << modelo << " (" << anio << ") | Km: " << km << "\n";
+        cout << "Propietario: " << nombreProp << " | Cedula: " << cedulaProp << " | Telefono: " << telefonoProp << "\n";
+
+        confirmado = confirmarDatos();
+        if (!confirmado) {
+            if (cin.eof()) return;
+            cout << "\nVuelva a escribir los datos del vehiculo.\n";
+        }
+    }
 
     int res = registrarVehiculoLogica(placa, marca, modelo, anio, km, nombreProp, cedulaProp, telefonoProp);
     if (res > 0) {
@@ -94,6 +132,10 @@ void menuRegistrarVehiculo() {
 
 void menuMostrarVehiculos() {
     cout << "\n--- LISTA DE VEHICULOS ACTIVOS ---\n";
+    int totalActivos = cantidadVehiculosActivosLogica();
+    if (totalActivos >= 0) {
+        cout << "Total de vehiculos activos: " << totalActivos << " (leido del header)\n";
+    }
     ArchivoHeader h;
     if (!leerHeader(RUTA_VEHICULOS, h)) {
         cout << "[ERROR] No se pudo leer el archivo.\n";
@@ -114,25 +156,42 @@ void menuMostrarVehiculos() {
 }
 
 void menuActualizarVehiculo() {
-    int id, anio;
+    int id = 0, anio = 0;
     char marca[50], modelo[50], nombreProp[100], cedulaProp[20], telefonoProp[20];
+    bool confirmado = false;
 
     cout << "\n--- ACTUALIZAR VEHICULO ---\n";
     menuMostrarVehiculos();
-    cout << "\nID del vehiculo a actualizar: ";
-    cin >> id; cin.clear(); cin.ignore(10000, '\n');
-    cout << "Nueva marca: ";
-    cin.getline(marca, 50);
-    cout << "Nuevo modelo: ";
-    cin.getline(modelo, 50);
-    cout << "Nuevo anio (1950-2027): ";
-    cin >> anio; cin.clear(); cin.ignore(10000, '\n');
-    cout << "Nombre del propietario: ";
-    cin.getline(nombreProp, 100);
-    cout << "Cedula del propietario: ";
-    cin.getline(cedulaProp, 20);
-    cout << "Telefono del propietario: ";
-    cin.getline(telefonoProp, 20);
+    while (!confirmado) {
+        cout << "\nID del vehiculo a actualizar: ";
+        cin >> id; cin.clear(); cin.ignore(10000, '\n');
+        cout << "Nueva marca: ";
+        cin.getline(marca, 50);
+        cout << "Nuevo modelo: ";
+        cin.getline(modelo, 50);
+        cout << "Nuevo anio (1950-2027): ";
+        cin >> anio; cin.clear(); cin.ignore(10000, '\n');
+        cout << "Nombre del propietario: ";
+        cin.getline(nombreProp, 100);
+        cout << "Cedula del propietario: ";
+        cin.getline(cedulaProp, 20);
+        cout << "Telefono del propietario: ";
+        cin.getline(telefonoProp, 20);
+
+        Vehiculo actual;
+        long long posicion = 0;
+        bool existe = (obtenerVehiculoPorIDLogica(id, actual, posicion) == 1);
+        cout << "\n--- RESUMEN DE LA ACTUALIZACION ---\n";
+        cout << "Vehiculo a actualizar: " << (existe ? actual.placa : "(no existe o esta eliminado)") << "\n";
+        cout << "Nuevos datos: " << marca << " " << modelo << " (" << anio << ")\n";
+        cout << "Propietario: " << nombreProp << " | Cedula: " << cedulaProp << " | Telefono: " << telefonoProp << "\n";
+
+        confirmado = confirmarDatos();
+        if (!confirmado) {
+            if (cin.eof()) return;
+            cout << "\nVuelva a escribir los datos.\n";
+        }
+    }
 
     int res = actualizarVehiculoLogica(id, marca, modelo, anio, nombreProp, cedulaProp, telefonoProp);
     if (res == 1) {
@@ -171,13 +230,26 @@ void menuEliminarVehiculo() {
 
 void menuRegistrarMecanico() {
     Mecanico nuevo;
-    memset(&nuevo, 0, sizeof(Mecanico));
+    bool confirmado = false;
 
     cout << "\n--- REGISTRAR NUEVO MECANICO ---\n";
-    cout << "Nombre: "; cin.getline(nuevo.nombre, 100);
-    cout << "Cedula: "; cin.getline(nuevo.cedula, 20);
-    cout << "Especialidad (Motor/Frenos/Electricidad/Suspension/General): "; cin.getline(nuevo.especialidad, 20);
-    cout << "Fecha de ingreso (YYYY-MM-DD): "; cin.getline(nuevo.fechaIngreso, 11);
+    while (!confirmado) {
+        memset(&nuevo, 0, sizeof(Mecanico));
+        cout << "Nombre: "; cin.getline(nuevo.nombre, 100);
+        cout << "Cedula: "; cin.getline(nuevo.cedula, 20);
+        cout << "Especialidad (Motor/Frenos/Electricidad/Suspension/General): "; cin.getline(nuevo.especialidad, 20);
+        cout << "Fecha de ingreso (YYYY-MM-DD): "; cin.getline(nuevo.fechaIngreso, 11);
+
+        cout << "\n--- RESUMEN DEL MECANICO ---\n";
+        cout << "Nombre: " << nuevo.nombre << " | Cedula: " << nuevo.cedula
+             << " | Especialidad: " << nuevo.especialidad << " | Ingreso: " << nuevo.fechaIngreso << "\n";
+
+        confirmado = confirmarDatos();
+        if (!confirmado) {
+            if (cin.eof()) return;
+            cout << "\nVuelva a escribir los datos del mecanico.\n";
+        }
+    }
 
     int res = registrarMecanico(nuevo);
     if (res > 0) {
@@ -230,17 +302,30 @@ void menuDarDeBajaMecanico() {
 
 void menuRegistrarRepuesto() {
     char codigo[20], nombre[100], marca[50];
-    float precio;
-    int stock, stockMinimo;
+    float precio = 0;
+    int stock = 0, stockMinimo = 0;
+    bool confirmado = false;
 
     cout << "\n--- REGISTRO DE NUEVO REPUESTO ---\n";
-    cout << "Codigo: ";             cin.getline(codigo, 20);
-    cout << "Nombre: ";             cin.getline(nombre, 100);
-    cout << "Marca: ";              cin.getline(marca, 50);
-    cout << "Precio unitario ($): "; cin >> precio;
-    cout << "Stock inicial: ";      cin >> stock;
-    cout << "Stock minimo: ";       cin >> stockMinimo;
-    cin.clear(); cin.ignore(10000, '\n');
+    while (!confirmado) {
+        cout << "Codigo: ";             cin.getline(codigo, 20);
+        cout << "Nombre: ";             cin.getline(nombre, 100);
+        cout << "Marca: ";              cin.getline(marca, 50);
+        cout << "Precio unitario ($): "; cin >> precio;
+        cout << "Stock inicial: ";      cin >> stock;
+        cout << "Stock minimo: ";       cin >> stockMinimo;
+        cin.clear(); cin.ignore(10000, '\n');
+
+        cout << "\n--- RESUMEN DEL REPUESTO ---\n";
+        cout << "Codigo: " << codigo << " | " << nombre << " | Marca: " << marca << "\n";
+        cout << "Precio: $" << precio << " | Stock inicial: " << stock << " | Stock minimo: " << stockMinimo << "\n";
+
+        confirmado = confirmarDatos();
+        if (!confirmado) {
+            if (cin.eof()) return;
+            cout << "\nVuelva a escribir los datos del repuesto.\n";
+        }
+    }
 
     int res = registrarRepuestoLogica(codigo, nombre, marca, precio, stock, stockMinimo);
     if (res > 0) {
@@ -260,6 +345,10 @@ void menuRegistrarRepuesto() {
 
 void menuMostrarRepuestos() {
     cout << "\n--- INVENTARIO DE REPUESTOS ACTIVOS ---\n";
+    int totalRepActivos = cantidadRepuestosActivosLogica();
+    if (totalRepActivos >= 0) {
+        cout << "Total de repuestos activos: " << totalRepActivos << " (leido del header)\n";
+    }
     ArchivoHeader h;
     if (!leerHeader(RUTA_REPUESTOS, h)) {
         cout << "[ERROR] No se pudo leer el archivo.\n";
@@ -349,19 +438,39 @@ void menuEliminarRepuesto() {
 
 void menuCrearOrden() {
     char fecha[11], falla[200];
-    int km, idVehiculo, idMecanico;
+    int km = 0, idVehiculo = 0, idMecanico = 0;
+    bool confirmado = false;
 
     cout << "\n--- CREAR NUEVA ORDEN DE SERVICIO ---\n";
     menuMostrarVehiculos();
     menuMostrarMecanicos();
 
-    cout << "\nFecha de apertura (YYYY-MM-DD): "; cin.getline(fecha, 11);
-    cout << "Descripcion de la falla: ";          cin.getline(falla, 200);
-    cout << "Kilometraje de ingreso: ";           cin >> km;
-    cin.clear(); cin.ignore(10000, '\n');
-    cout << "ID del vehiculo: ";                  cin >> idVehiculo;
-    cout << "ID del mecanico: ";                  cin >> idMecanico;
-    cin.clear(); cin.ignore(10000, '\n');
+    while (!confirmado) {
+        cout << "\nFecha de apertura (YYYY-MM-DD): "; cin.getline(fecha, 11);
+        cout << "Descripcion de la falla: ";          cin.getline(falla, 200);
+        cout << "Kilometraje de ingreso: ";           cin >> km;
+        cin.clear(); cin.ignore(10000, '\n');
+        cout << "ID del vehiculo: ";                  cin >> idVehiculo;
+        cout << "ID del mecanico: ";                  cin >> idMecanico;
+        cin.clear(); cin.ignore(10000, '\n');
+
+        Vehiculo veh;
+        Mecanico mec;
+        long long posicion = 0;
+        bool okV = (obtenerVehiculoPorIDLogica(idVehiculo, veh, posicion) == 1);
+        bool okM = (obtenerMecanicoPorIDLogica(idMecanico, mec) == 1);
+        cout << "\n--- RESUMEN DE LA ORDEN ---\n";
+        cout << "Fecha: " << fecha << " | Km de ingreso: " << km << "\n";
+        cout << "Falla: " << falla << "\n";
+        cout << "Vehiculo: " << (okV ? veh.placa : "(no existe o esta eliminado)")
+             << " | Mecanico: " << (okM ? mec.nombre : "(no existe o esta dado de baja)") << "\n";
+
+        confirmado = confirmarDatos();
+        if (!confirmado) {
+            if (cin.eof()) return;
+            cout << "\nVuelva a escribir los datos de la orden.\n";
+        }
+    }
 
     int res = crearOrdenServicioLogica(fecha, falla, km, idVehiculo, idMecanico);
     if (res > 0) {
@@ -523,6 +632,201 @@ void menuMostrarOrdenes() {
     }
 }
 
+void mostrarDetalleOrden(const OrdenServicio &o) {
+    cout << "  Falla: " << o.descripcionFalla << " | Km ingreso: " << o.kilometrajeIngreso << "\n";
+    if (strcmp(o.estado, "CERRADA") == 0) {
+        cout << "  Fecha de cierre: " << o.fechaCierre << "\n";
+    }
+    if (o.totalLineas == 0) {
+        cout << "  (sin lineas de detalle)\n";
+    }
+    for (int i = 0; i < o.totalLineas; i++) {
+        if (o.lineasDetalle[i].activo) {
+            cout << "  " << (i + 1) << ". [" << o.lineasDetalle[i].codigoRepuesto << "] "
+                 << o.lineasDetalle[i].nombreRepuesto
+                 << " x" << o.lineasDetalle[i].cantidad
+                 << " @ $" << o.lineasDetalle[i].precioHistorico
+                 << " = $" << o.lineasDetalle[i].cantidad * o.lineasDetalle[i].precioHistorico << "\n";
+        }
+    }
+    cout << "  Mano de obra: $" << o.manoObra << "\n";
+}
+
+void menuBuscarVehiculoPorID() {
+    int id;
+    cout << "\n--- BUSCAR VEHICULO POR ID ---\n";
+    cout << "ID del vehiculo: ";
+    cin >> id; cin.clear(); cin.ignore(10000, '\n');
+
+    Vehiculo veh;
+    long long posicion = -1;
+    int res = obtenerVehiculoPorIDLogica(id, veh, posicion);
+
+    if (res == 1 || res == -3) {
+        cout << "[DEBUG] Vehiculo ID " << id << " leido directamente en el byte " << posicion
+             << "  (" << sizeof(ArchivoHeader) << " + (" << id << " - 1) * " << sizeof(Vehiculo) << ")\n";
+    }
+    if (res == 1) {
+        mostrarVehiculo(veh);
+    } else if (res == -3) {
+        cout << "El vehiculo " << veh.placa << " (" << veh.marca << " " << veh.modelo
+             << ", propietario " << veh.nombrePropietario << ") fue ELIMINADO.\n";
+    } else if (res == -2) {
+        cout << "[ERROR]: No existe ningun vehiculo con ese ID.\n";
+    } else {
+        cout << "[ERROR]: No se pudo leer vehiculos.bin.\n";
+    }
+}
+
+void menuBuscarVehiculoPorPlaca() {
+    char placa[10];
+    cout << "\n--- BUSCAR VEHICULO POR PLACA ---\n";
+    cout << "Placa exacta: ";
+    cin.getline(placa, 10);
+
+    Vehiculo veh;
+    int res = obtenerVehiculoPorPlacaLogica(placa, veh);
+    if (res == 1) {
+        mostrarVehiculo(veh);
+    } else if (res == -2) {
+        cout << "No hay ningun vehiculo ACTIVO con esa placa.\n";
+    } else {
+        cout << "[ERROR]: No se pudo leer vehiculos.bin.\n";
+    }
+}
+
+void menuBuscarVehiculosPorPropietario() {
+    char texto[100];
+    cout << "\n--- BUSCAR VEHICULOS POR PROPIETARIO ---\n";
+    cout << "Nombre (o parte del nombre): ";
+    cin.getline(texto, 100);
+
+    Vehiculo resultados[MAX_RESULTADOS_BUSQUEDA];
+    int cantidad = 0;
+    bool hayMas = false;
+    int res = buscarVehiculosPorPropietarioLogica(texto, resultados, cantidad, hayMas);
+
+    if (res == -2) {
+        cout << "[ERROR]: Debe escribir al menos un caracter.\n";
+    } else if (res != 1) {
+        cout << "[ERROR]: No se pudo leer vehiculos.bin.\n";
+    } else if (cantidad == 0) {
+        cout << "No se encontraron vehiculos activos con ese propietario.\n";
+    } else {
+        for (int i = 0; i < cantidad; i++) {
+            mostrarVehiculo(resultados[i]);
+        }
+        if (hayMas) {
+            cout << "(Hay mas coincidencias: se muestran solo las primeras " << MAX_RESULTADOS_BUSQUEDA
+                 << ". Escriba un nombre mas especifico.)\n";
+        }
+    }
+}
+
+void menuBuscarMecanicoPorID() {
+    int id;
+    cout << "\n--- BUSCAR MECANICO POR ID ---\n";
+    cout << "ID del mecanico: ";
+    cin >> id; cin.clear(); cin.ignore(10000, '\n');
+
+    Mecanico mec;
+    int res = obtenerMecanicoPorIDLogica(id, mec);
+    if (res == 1 || res == -3) {
+        mostrarMecanico(mec);
+    } else {
+        cout << "[ERROR]: No existe ningun mecanico con ese ID.\n";
+    }
+}
+
+void menuBuscarRepuestoPorID() {
+    int id;
+    cout << "\n--- BUSCAR REPUESTO POR ID ---\n";
+    cout << "ID del repuesto: ";
+    cin >> id; cin.clear(); cin.ignore(10000, '\n');
+
+    Repuesto rep;
+    int res = obtenerRepuestoPorIDLogica(id, rep);
+    if (res == 1) {
+        mostrarRepuesto(rep);
+    } else {
+        cout << "[ERROR]: No existe un repuesto activo con ese ID.\n";
+    }
+}
+
+void menuBuscarRepuestos() {
+    char texto[100];
+    cout << "\n--- BUSCAR REPUESTOS POR CODIGO O NOMBRE ---\n";
+    cout << "Texto a buscar: ";
+    cin.getline(texto, 100);
+
+    Repuesto resultados[MAX_RESULTADOS_BUSQUEDA];
+    int cantidad = 0;
+    bool hayMas = false;
+    int res = buscarRepuestosLogica(texto, resultados, cantidad, hayMas);
+
+    if (res == -2) {
+        cout << "[ERROR]: Debe escribir al menos un caracter.\n";
+    } else if (res != 1) {
+        cout << "[ERROR]: No se pudo leer repuestos.bin.\n";
+    } else if (cantidad == 0) {
+        cout << "No se encontraron repuestos activos con ese codigo o nombre.\n";
+    } else {
+        for (int i = 0; i < cantidad; i++) {
+            mostrarRepuesto(resultados[i]);
+        }
+        if (hayMas) {
+            cout << "(Hay mas coincidencias: se muestran solo las primeras " << MAX_RESULTADOS_BUSQUEDA
+                 << ". Escriba un texto mas especifico.)\n";
+        }
+    }
+}
+
+void menuBuscarOrdenPorID() {
+    int id;
+    cout << "\n--- BUSCAR ORDEN POR ID ---\n";
+    cout << "ID de la orden: ";
+    cin >> id; cin.clear(); cin.ignore(10000, '\n');
+
+    OrdenServicio orden;
+    int res = obtenerOrdenPorIDLogica(id, orden);
+    if (res == 1) {
+        mostrarOrden(orden);
+        mostrarDetalleOrden(orden);
+    } else {
+        cout << "[ERROR]: No existe ninguna orden con ese ID.\n";
+    }
+}
+
+void menuListarOrdenesPorEstado() {
+    int op;
+    cout << "\n--- LISTAR ORDENES POR ESTADO ---\n";
+    cout << "1. ABIERTA\n2. CERRADA\n3. ANULADA\nEstado: ";
+    cin >> op; cin.clear(); cin.ignore(10000, '\n');
+
+    const char *estado = (op == 1) ? "ABIERTA" : (op == 2) ? "CERRADA" : (op == 3) ? "ANULADA" : "";
+
+    OrdenServicio resultados[MAX_RESULTADOS_BUSQUEDA];
+    int cantidad = 0;
+    bool hayMas = false;
+    int res = listarOrdenesPorEstadoLogica(estado, resultados, cantidad, hayMas);
+
+    if (res == -2) {
+        cout << "[ERROR]: Estado invalido.\n";
+    } else if (res != 1) {
+        cout << "[ERROR]: No se pudo leer ordenes.bin.\n";
+    } else if (cantidad == 0) {
+        cout << "No hay ordenes en estado " << estado << ".\n";
+    } else {
+        for (int i = 0; i < cantidad; i++) {
+            mostrarOrden(resultados[i]);
+        }
+        if (hayMas) {
+            cout << "(Hay mas ordenes " << estado << ": se muestran solo las primeras "
+                 << MAX_RESULTADOS_BUSQUEDA << ".)\n";
+        }
+    }
+}
+
 void submenuVehiculos() {
     int op = 0;
     do {
@@ -531,6 +835,9 @@ void submenuVehiculos() {
         cout << "2. Listar vehiculos\n";
         cout << "3. Actualizar vehiculo\n";
         cout << "4. Eliminar vehiculo\n";
+        cout << "5. Buscar por ID\n";
+        cout << "6. Buscar por placa\n";
+        cout << "7. Buscar por propietario\n";
         cout << "0. Volver\n";
         cout << "Opcion: ";
         cin >> op; cin.clear(); cin.ignore(10000, '\n');
@@ -539,6 +846,9 @@ void submenuVehiculos() {
             case 2: menuMostrarVehiculos();   break;
             case 3: menuActualizarVehiculo(); break;
             case 4: menuEliminarVehiculo();   break;
+            case 5: menuBuscarVehiculoPorID(); break;
+            case 6: menuBuscarVehiculoPorPlaca(); break;
+            case 7: menuBuscarVehiculosPorPropietario(); break;
         }
     } while (op != 0);
 }
@@ -550,6 +860,7 @@ void submenuMecanicos() {
         cout << "1. Registrar mecanico\n";
         cout << "2. Listar mecanicos (activos y bajas)\n";
         cout << "3. Dar de baja mecanico\n";
+        cout << "4. Buscar por ID\n";
         cout << "0. Volver\n";
         cout << "Opcion: ";
         cin >> op; cin.clear(); cin.ignore(10000, '\n');
@@ -557,6 +868,7 @@ void submenuMecanicos() {
             case 1: menuRegistrarMecanico(); break;
             case 2: menuMostrarMecanicos();  break;
             case 3: menuDarDeBajaMecanico(); break;
+            case 4: menuBuscarMecanicoPorID(); break;
         }
     } while (op != 0);
 }
@@ -570,6 +882,8 @@ void submenuRepuestos() {
         cout << "3. Entrada de mercancia\n";
         cout << "4. Cambiar precio\n";
         cout << "5. Eliminar repuesto\n";
+        cout << "6. Buscar por ID\n";
+        cout << "7. Buscar por codigo o nombre\n";
         cout << "0. Volver\n";
         cout << "Opcion: ";
         cin >> op; cin.clear(); cin.ignore(10000, '\n');
@@ -579,6 +893,8 @@ void submenuRepuestos() {
             case 3: menuEntradaMercancia();      break;
             case 4: menuCambiarPrecioRepuesto(); break;
             case 5: menuEliminarRepuesto();      break;
+            case 6: menuBuscarRepuestoPorID(); break;
+            case 7: menuBuscarRepuestos(); break;
         }
     } while (op != 0);
 }
@@ -593,6 +909,8 @@ void submenuOrdenes() {
         cout << "4. Cerrar orden\n";
         cout << "5. Anular orden\n";
         cout << "6. Listar ordenes\n";
+        cout << "7. Buscar orden por ID (con su detalle)\n";
+        cout << "8. Listar ordenes por estado\n";
         cout << "0. Volver\n";
         cout << "Opcion: ";
         cin >> op; cin.clear(); cin.ignore(10000, '\n');
@@ -603,6 +921,8 @@ void submenuOrdenes() {
             case 4: menuCerrarOrden();     break;
             case 5: menuAnularOrden();     break;
             case 6: menuMostrarOrdenes();  break;
+            case 7: menuBuscarOrdenPorID(); break;
+            case 8: menuListarOrdenesPorEstado(); break;
         }
     } while (op != 0);
 }

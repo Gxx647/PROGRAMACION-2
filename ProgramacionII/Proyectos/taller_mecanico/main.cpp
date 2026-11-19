@@ -46,7 +46,7 @@ int main()
 
         cout << "\n========================================\n";
         cout << "      SISTEMA DE GESTION DE TALLER      \n";
-        cout << " Taller: " << datosTaller.nombre << "\n";
+        
         cout << "========================================\n";
         cout << "1. Gestion de Vehiculos\n";
         cout << "2. Gestion de Mecanicos (Incluye baja)\n";
