@@ -48,6 +48,8 @@ int guardarRegistro(const std::string& rutaEntidad, T& registro) {
 
 template <typename T>
 bool leerRegistroPorID(const std::string& rutaEntidad, int id, T& registroOut) {
+    if (id <= 0) return false;
+
     std::ifstream archivo(rutaEntidad, std::ios::binary);
     if (!archivo.is_open()) return false;
 
@@ -56,15 +58,13 @@ bool leerRegistroPorID(const std::string& rutaEntidad, int id, T& registroOut) {
 
     long long posicion = sizeof(ArchivoHeader) + static_cast<long long>(id - 1) * sizeof(T);
     archivo.seekg(posicion, std::ios::beg);
-    
-    if (archivo.peek() == EOF) {
-        archivo.close();
-        return false;
-    }
+    if (!archivo) return false;
 
     archivo.read(reinterpret_cast<char*>(&registroOut), sizeof(T));
+    if (!archivo) return false;
+
     archivo.close();
-    return true;
+    return archivo.good();
 }
 
 template <typename T>

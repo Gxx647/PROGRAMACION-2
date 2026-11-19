@@ -18,8 +18,6 @@ bool especialidadValida(const char *especialidad)
     return false;
 }
 
-
-
 int registrarVehiculoLogica(const char *placa, const char *marca, const char *modelo, int anio, int kilometraje, const char *nombrePropietario, const char *cedulaPropietario, const char *telefonoPropietario)
 {
     if (anio < 1950 || anio > 2027)
@@ -31,7 +29,6 @@ int registrarVehiculoLogica(const char *placa, const char *marca, const char *mo
         return -4;
     }
 
-    
     ArchivoHeader header;
     if (!leerHeader(RUTA_VEHICULOS, header))
     {
@@ -50,7 +47,7 @@ int registrarVehiculoLogica(const char *placa, const char *marca, const char *mo
     }
 
     Vehiculo nuevo;
-    memset(&nuevo, 0, sizeof(Vehiculo)); 
+    memset(&nuevo, 0, sizeof(Vehiculo));
 
     strncpy(nuevo.placa, placa, 9);
     nuevo.placa[9] = '\0';
@@ -67,9 +64,8 @@ int registrarVehiculoLogica(const char *placa, const char *marca, const char *mo
     strncpy(nuevo.telefonoPropietario, telefonoPropietario, 19);
     nuevo.telefonoPropietario[19] = '\0';
 
-    return guardarRegistro(RUTA_VEHICULOS, nuevo); 
+    return guardarRegistro(RUTA_VEHICULOS, nuevo);
 }
-
 
 int registrarMecanico(Mecanico datos)
 {
@@ -101,10 +97,8 @@ int registrarMecanico(Mecanico datos)
         }
     }
 
-    return guardarRegistro(RUTA_MECANICOS, datos); 
+    return guardarRegistro(RUTA_MECANICOS, datos);
 }
-
-
 
 int registrarRepuestoLogica(const char *codigo, const char *nombre, const char *marca, float precio, int stock, int stockMinimo)
 {
@@ -152,14 +146,12 @@ int registrarRepuestoLogica(const char *codigo, const char *nombre, const char *
     nuevo.stock = stock;
     nuevo.stockMinimo = stockMinimo;
 
-    return guardarRegistro(RUTA_REPUESTOS, nuevo); 
+    return guardarRegistro(RUTA_REPUESTOS, nuevo);
 }
-
-
 
 int crearOrdenServicioLogica(const char *fecha, const char *falla, int km, int idVehiculo, int idMecanico)
 {
-    
+
     Vehiculo veh;
     if (idVehiculo <= 0 || !leerRegistroPorID(RUTA_VEHICULOS, idVehiculo, veh))
     {
@@ -179,7 +171,7 @@ int crearOrdenServicioLogica(const char *fecha, const char *falla, int km, int i
     {
         return -5;
     }
-    
+
     ArchivoHeader header;
     if (!leerHeader(RUTA_ORDENES, header))
     {
@@ -212,7 +204,7 @@ int crearOrdenServicioLogica(const char *fecha, const char *falla, int km, int i
     {
         return -8;
     }
-    
+
     OrdenServicio nueva;
     memset(&nueva, 0, sizeof(OrdenServicio));
 
@@ -272,7 +264,6 @@ int agregarRepuestoAOrdenLogica(int idOrden, int idRepuesto, int cantidad)
         return -7;
     }
 
- 
     int posLinea = -1;
     for (int i = 0; i < orden.totalLineas; i++)
     {
@@ -304,11 +295,10 @@ int agregarRepuestoAOrdenLogica(int idOrden, int idRepuesto, int cantidad)
     }
     else
     {
-        
+
         orden.lineasDetalle[posLinea].cantidad += cantidad;
     }
 
-    
     if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, orden))
     {
         return -1;
@@ -383,7 +373,6 @@ int actualizarVehiculoLogica(int idVehiculo, const char *marca, const char *mode
         return -3;
     }
 
-   
     strncpy(veh.marca, marca, 49);
     veh.marca[49] = '\0';
 
@@ -426,7 +415,6 @@ int eliminarVehiculoLogica(int idVehiculo)
         return -1;
     }
 
-  
     OrdenServicio orden;
     for (int i = 1; i <= headerOrdenes.cantidadRegistros; i++)
     {
@@ -464,7 +452,6 @@ int darDeBajaMecanicoLogica(int idMecanico)
         return -1;
     }
 
-  
     OrdenServicio orden;
     for (int i = 1; i <= headerOrdenes.cantidadRegistros; i++)
     {
@@ -481,5 +468,185 @@ int darDeBajaMecanicoLogica(int idMecanico)
     {
         return -1;
     }
+    return 1;
+}
+
+int entradaMercanciaLogica(int idRepuesto, int cantidad)
+{
+    if (cantidad <= 0)
+    {
+        return -4;
+    }
+
+    Repuesto rep;
+    if (idRepuesto <= 0 || !leerRegistroPorID(RUTA_REPUESTOS, idRepuesto, rep))
+    {
+        return -2;
+    }
+    if (rep.eliminado)
+    {
+        return -3;
+    }
+
+    rep.stock += cantidad;
+    if (!sobrescribirRegistro(RUTA_REPUESTOS, idRepuesto, rep))
+    {
+        return -1;
+    }
+    return 1;
+}
+
+int cambiarPrecioRepuestoLogica(int idRepuesto, float nuevoPrecio)
+{
+    if (nuevoPrecio <= 0)
+    {
+        return -4;
+    }
+
+    Repuesto rep;
+    if (idRepuesto <= 0 || !leerRegistroPorID(RUTA_REPUESTOS, idRepuesto, rep))
+    {
+        return -2;
+    }
+    if (rep.eliminado)
+    {
+        return -3;
+    }
+
+    rep.precio = nuevoPrecio;
+    if (!sobrescribirRegistro(RUTA_REPUESTOS, idRepuesto, rep))
+    {
+        return -1;
+    }
+    return 1;
+}
+
+int eliminarRepuestoLogica(int idRepuesto)
+{
+    Repuesto rep;
+    if (idRepuesto <= 0 || !leerRegistroPorID(RUTA_REPUESTOS, idRepuesto, rep))
+    {
+        return -2;
+    }
+    if (rep.eliminado)
+    {
+        return -3;
+    }
+
+    ArchivoHeader headerOrdenes;
+    if (!leerHeader(RUTA_ORDENES, headerOrdenes))
+    {
+        return -1;
+    }
+
+    OrdenServicio orden;
+    for (int i = 1; i <= headerOrdenes.cantidadRegistros; i++)
+    {
+        if (leerRegistroPorID(RUTA_ORDENES, i, orden))
+        {
+            for (int j = 0; j < orden.totalLineas; j++)
+            {
+                if (orden.lineasDetalle[j].activo && orden.lineasDetalle[j].idRepuesto == idRepuesto)
+                {
+                    return -4;
+                }
+            }
+        }
+    }
+
+    if (!marcarComoEliminado<Repuesto>(RUTA_REPUESTOS, idRepuesto))
+    {
+        return -1;
+    }
+    return 1;
+}
+
+int quitarRepuestoDeOrdenLogica(int idOrden, int idRepuesto)
+{
+    OrdenServicio orden;
+    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, orden))
+    {
+        return -2;
+    }
+    if (strcmp(orden.estado, "ABIERTA") != 0)
+    {
+        return -3;
+    }
+
+    int indiceLinea = -1;
+    for (int i = 0; i < orden.totalLineas; i++)
+    {
+        if (orden.lineasDetalle[i].activo && orden.lineasDetalle[i].idRepuesto == idRepuesto)
+        {
+            indiceLinea = i;
+            break;
+        }
+    }
+    if (indiceLinea == -1)
+    {
+        return -4;
+    }
+
+    int cantidadDevolver = orden.lineasDetalle[indiceLinea].cantidad;
+
+    for (int i = indiceLinea; i < orden.totalLineas - 1; i++)
+    {
+        orden.lineasDetalle[i] = orden.lineasDetalle[i + 1];
+    }
+    orden.totalLineas--;
+    memset(&orden.lineasDetalle[orden.totalLineas], 0, sizeof(DetalleLineaOrden));
+
+    Repuesto rep;
+    bool tieneRepuesto = (idRepuesto > 0 && leerRegistroPorID(RUTA_REPUESTOS, idRepuesto, rep));
+
+    if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, orden))
+    {
+        return -1;
+    }
+    if (tieneRepuesto)
+    {
+        rep.stock += cantidadDevolver;
+        if (!sobrescribirRegistro(RUTA_REPUESTOS, idRepuesto, rep))
+        {
+            return -1;
+        }
+    }
+    return 1;
+}
+
+int anularOrdenLogica(int idOrden, OrdenServicio &ordenOut)
+{
+    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, ordenOut))
+    {
+        return -2;
+    }
+    if (strcmp(ordenOut.estado, "ABIERTA") != 0 && strcmp(ordenOut.estado, "CERRADA") != 0)
+    {
+        return -3;
+    }
+
+    strcpy(ordenOut.estado, "ANULADA");
+    if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, ordenOut))
+    {
+        return -1;
+    }
+
+    for (int i = 0; i < ordenOut.totalLineas; i++)
+    {
+        if (ordenOut.lineasDetalle[i].activo)
+        {
+            Repuesto rep;
+            int idRep = ordenOut.lineasDetalle[i].idRepuesto;
+            if (idRep > 0 && leerRegistroPorID(RUTA_REPUESTOS, idRep, rep))
+            {
+                rep.stock += ordenOut.lineasDetalle[i].cantidad;
+                if (!sobrescribirRegistro(RUTA_REPUESTOS, idRep, rep))
+                {
+                    return -1;
+                }
+            }
+        }
+    }
+
     return 1;
 }

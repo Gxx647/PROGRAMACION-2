@@ -25,8 +25,11 @@ bool leerHeader(const std::string& ruta, ArchivoHeader& headerOut) {
     if (!archivo.is_open()) return false;
 
     archivo.read(reinterpret_cast<char*>(&headerOut), sizeof(ArchivoHeader));
+    if (!archivo)
+        return false;
+
     archivo.close();
-    return true;
+    return !archivo.fail();
 }
 
 bool actualizarHeader(const std::string& ruta, const ArchivoHeader& header) {

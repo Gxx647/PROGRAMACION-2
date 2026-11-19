@@ -34,4 +34,18 @@ int eliminarVehiculoLogica(int idVehiculo);
 
 int darDeBajaMecanicoLogica(int idMecanico);
 
+int entradaMercanciaLogica(int idRepuesto, int cantidad);
+
+
+int cambiarPrecioRepuestoLogica(int idRepuesto, float nuevoPrecio);
+
+
+int eliminarRepuestoLogica(int idRepuesto);
+
+
+int quitarRepuestoDeOrdenLogica(int idOrden, int idRepuesto);
+
+
+int anularOrdenLogica(int idOrden, OrdenServicio& ordenOut);
+
 #endif
