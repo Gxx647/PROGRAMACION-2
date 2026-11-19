@@ -684,12 +684,12 @@ int anularOrdenLogica(int idOrden, OrdenServicio &ordenOut)
 
 int obtenerVehiculoPorIDLogica(int idVehiculo, Vehiculo &vehOut, long long &posicionOut)
 {
-    // La persistencia entrega el registro aunque este eliminado y nos dice en que byte lo leyo.
+    
     if (idVehiculo <= 0 || !leerRegistroPorID(RUTA_VEHICULOS, idVehiculo, vehOut, &posicionOut))
     {
         return -2;
     }
-    // Decidir si un eliminado "sirve" es regla de negocio: por eso -3 y no -2.
+    
     if (vehOut.eliminado)
     {
         return -3;
@@ -704,7 +704,7 @@ int obtenerVehiculoPorPlacaLogica(const char *placa, Vehiculo &vehOut)
     {
         return -1;
     }
-    // Busqueda por otro campo: se recorre el archivo con UN solo registro en memoria a la vez.
+    
     for (int i = 1; i <= header.cantidadRegistros; i++)
     {
         Vehiculo actual;
@@ -743,7 +743,7 @@ int buscarVehiculosPorPropietarioLogica(const char *texto, Vehiculo resultados[]
         }
         if (cantidadOut == MAX_RESULTADOS_BUSQUEDA)
         {
-            // Ya tenemos el maximo y aparece otra coincidencia: hay mas. Dejamos de leer.
+            
             hayMasOut = true;
             break;
         }
@@ -777,7 +777,7 @@ int obtenerRepuestoPorIDLogica(int idRepuesto, Repuesto &repOut)
     {
         return -2;
     }
-    // Para repuestos el enunciado dice "solo activos": un eliminado se trata como inexistente.
+    
     if (repOut.eliminado)
     {
         return -2;
@@ -869,4 +869,24 @@ int listarOrdenesPorEstadoLogica(const char *estado, OrdenServicio resultados[],
         cantidadOut++;
     }
     return 1;
+}
+
+int contarOrdenesAbiertasMecanicoLogica(int idMecanico) {
+    if (idMecanico <= 0) {
+        return 0;
+    }
+    ArchivoHeader header;
+    if (!leerHeader(RUTA_ORDENES, header)) {
+        return -1;
+    }
+    int abiertas = 0;
+    OrdenServicio orden;
+    for (int i = 1; i <= header.cantidadRegistros; i++) {
+        if (leerRegistroPorID(RUTA_ORDENES, i, orden) && !orden.eliminado) {
+            if (orden.idMecanico == idMecanico && strcmp(orden.estado, "ABIERTA") == 0) {
+                abiertas++;
+            }
+        }
+    }
+    return abiertas;
 }

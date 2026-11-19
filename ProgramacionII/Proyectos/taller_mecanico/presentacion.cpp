@@ -8,8 +8,7 @@
 using namespace std;
 
 namespace {
-    // Pregunta si los datos escritos son correctos y repite la pregunta hasta recibir
-    // una respuesta valida. true = Si (1, s, si). false = No (2, n, no).
+    
     bool confirmarDatos() {
         char resp[20];
         while (true) {
@@ -29,6 +28,28 @@ namespace {
             cout << "[ERROR]: Responda 1 (Si) o 2 (No).\n";
         }
     }
+
+    int contarOrdenesAbiertasMecanico(int idMecanico, bool& okArchivo) {
+        okArchivo = true;
+        if (idMecanico <= 0) return 0;
+
+        ArchivoHeader hOrd;
+        if (!leerHeader(RUTA_ORDENES, hOrd)) {
+            okArchivo = false;
+            return 0;
+        }
+
+        int abiertas = 0;
+        for (int i = 1; i <= hOrd.cantidadRegistros; i++) {
+            OrdenServicio o;
+            if (leerRegistroPorID(RUTA_ORDENES, i, o) && !o.eliminado) {
+                if (o.idMecanico == idMecanico && strcmp(o.estado, "ABIERTA") == 0) {
+                    abiertas++;
+                }
+            }
+        }
+        return abiertas;
+    }
 }
 
 void mostrarVehiculo(const Vehiculo &v) {
@@ -41,10 +62,17 @@ void mostrarVehiculo(const Vehiculo &v) {
 }
 
 void mostrarMecanico(const Mecanico &m) {
+    bool okOrd = true;
+    int abiertas = contarOrdenesAbiertasMecanico(m.id, okOrd);
+
     cout << "ID: " << m.id
          << " | " << m.nombre
          << " | Cedula: " << m.cedula
-         << " | Especialidad: " << m.especialidad;
+         << " | Especialidad: " << m.especialidad
+         << " | Ordenes ABIERTAS: " << (okOrd ? abiertas : -1);
+    if (!okOrd) {
+        cout << " (error leyendo " << RUTA_ORDENES << ")";
+    }
     if (m.eliminado) {
         cout << "  [BAJA]";
     }
@@ -126,7 +154,7 @@ void menuRegistrarVehiculo() {
     } else if (res == -4) {
         cout << "[ERROR]: El kilometraje no puede ser negativo.\n";
     } else {
-        cout << "[ERROR]: Fallo al registrar el vehiculo en el archivo.\n";
+        cout << "[ERROR]: Fallo al registrar el vehiculo en " << RUTA_VEHICULOS << ".\n";
     }
 }
 
@@ -134,11 +162,11 @@ void menuMostrarVehiculos() {
     cout << "\n--- LISTA DE VEHICULOS ACTIVOS ---\n";
     int totalActivos = cantidadVehiculosActivosLogica();
     if (totalActivos >= 0) {
-        cout << "Total de vehiculos activos: " << totalActivos << " (leido del header)\n";
+        cout << "Total de vehiculos activos: " << totalActivos << " (leido del header de " << RUTA_VEHICULOS << ")\n";
     }
     ArchivoHeader h;
     if (!leerHeader(RUTA_VEHICULOS, h)) {
-        cout << "[ERROR] No se pudo leer el archivo.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_VEHICULOS << ".\n";
         return;
     }
 
@@ -195,7 +223,7 @@ void menuActualizarVehiculo() {
 
     int res = actualizarVehiculoLogica(id, marca, modelo, anio, nombreProp, cedulaProp, telefonoProp);
     if (res == 1) {
-        cout << "Vehiculo actualizado correctamente.\n";
+        cout << "Vehiculo actualizado correctamente en " << RUTA_VEHICULOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: ID invalido o el vehiculo no existe.\n";
     } else if (res == -3) {
@@ -203,7 +231,7 @@ void menuActualizarVehiculo() {
     } else if (res == -4) {
         cout << "[ERROR]: Anio fuera de rango (1950-2027).\n";
     } else {
-        cout << "[ERROR]: Fallo al actualizar el vehiculo.\n";
+        cout << "[ERROR]: Fallo al actualizar el vehiculo en " << RUTA_VEHICULOS << ".\n";
     }
 }
 
@@ -216,7 +244,7 @@ void menuEliminarVehiculo() {
 
     int res = eliminarVehiculoLogica(id);
     if (res == 1) {
-        cout << "Vehiculo marcado como eliminado.\n";
+        cout << "Vehiculo marcado como eliminado en " << RUTA_VEHICULOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: ID invalido o el vehiculo no existe.\n";
     } else if (res == -3) {
@@ -224,7 +252,7 @@ void menuEliminarVehiculo() {
     } else if (res == -4) {
         cout << "[ERROR]: No se puede eliminar; el vehiculo tiene ordenes registradas.\n";
     } else {
-        cout << "[ERROR]: Fallo al eliminar el vehiculo.\n";
+        cout << "[ERROR]: Fallo al eliminar el vehiculo en " << RUTA_VEHICULOS << " o leer " << RUTA_ORDENES << ".\n";
     }
 }
 
@@ -253,13 +281,13 @@ void menuRegistrarMecanico() {
 
     int res = registrarMecanico(nuevo);
     if (res > 0) {
-        cout << "Mecanico registrado con ID #" << res << ".\n";
+        cout << "Mecanico registrado con ID #" << res << " en " << RUTA_MECANICOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: Ya existe un mecanico con esa cedula.\n";
     } else if (res == -3) {
         cout << "[ERROR]: Especialidad no permitida.\n";
     } else {
-        cout << "[ERROR]: Fallo al registrar el mecanico.\n";
+        cout << "[ERROR]: Fallo al registrar el mecanico en " << RUTA_MECANICOS << ".\n";
     }
 }
 
@@ -267,7 +295,7 @@ void menuMostrarMecanicos() {
     cout << "\n--- LISTA DE MECANICOS (activos y dados de baja) ---\n";
     ArchivoHeader h;
     if (!leerHeader(RUTA_MECANICOS, h)) {
-        cout << "[ERROR] No se pudo leer el archivo.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_MECANICOS << ".\n";
         return;
     }
 
@@ -288,7 +316,7 @@ void menuDarDeBajaMecanico() {
 
     int res = darDeBajaMecanicoLogica(id);
     if (res == 1) {
-        cout << "Mecanico dado de baja correctamente.\n";
+        cout << "Mecanico dado de baja correctamente en " << RUTA_MECANICOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: ID invalido o el mecanico no existe.\n";
     } else if (res == -3) {
@@ -296,7 +324,7 @@ void menuDarDeBajaMecanico() {
     } else if (res == -4) {
         cout << "[ERROR]: No se puede dar de baja; tiene ordenes ABIERTAS.\n";
     } else {
-        cout << "[ERROR]: Fallo al dar de baja al mecanico.\n";
+        cout << "[ERROR]: Fallo al dar de baja en " << RUTA_MECANICOS << " o leer " << RUTA_ORDENES << ".\n";
     }
 }
 
@@ -329,7 +357,7 @@ void menuRegistrarRepuesto() {
 
     int res = registrarRepuestoLogica(codigo, nombre, marca, precio, stock, stockMinimo);
     if (res > 0) {
-        cout << "Repuesto registrado con ID #" << res << ".\n";
+        cout << "Repuesto registrado con ID #" << res << " en " << RUTA_REPUESTOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: Ya existe un repuesto ACTIVO con ese codigo.\n";
     } else if (res == -3) {
@@ -339,7 +367,7 @@ void menuRegistrarRepuesto() {
     } else if (res == -5) {
         cout << "[ERROR]: El stock minimo no puede ser negativo.\n";
     } else {
-        cout << "[ERROR]: Fallo al registrar el repuesto.\n";
+        cout << "[ERROR]: Fallo al registrar el repuesto en " << RUTA_REPUESTOS << ".\n";
     }
 }
 
@@ -347,11 +375,11 @@ void menuMostrarRepuestos() {
     cout << "\n--- INVENTARIO DE REPUESTOS ACTIVOS ---\n";
     int totalRepActivos = cantidadRepuestosActivosLogica();
     if (totalRepActivos >= 0) {
-        cout << "Total de repuestos activos: " << totalRepActivos << " (leido del header)\n";
+        cout << "Total de repuestos activos: " << totalRepActivos << " (leido del header de " << RUTA_REPUESTOS << ")\n";
     }
     ArchivoHeader h;
     if (!leerHeader(RUTA_REPUESTOS, h)) {
-        cout << "[ERROR] No se pudo leer el archivo.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_REPUESTOS << ".\n";
         return;
     }
 
@@ -379,7 +407,7 @@ void menuEntradaMercancia() {
 
     int res = entradaMercanciaLogica(idRep, cantidad);
     if (res == 1) {
-        cout << "Stock actualizado correctamente.\n";
+        cout << "Stock actualizado correctamente en " << RUTA_REPUESTOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: ID invalido o el repuesto no existe.\n";
     } else if (res == -3) {
@@ -387,7 +415,7 @@ void menuEntradaMercancia() {
     } else if (res == -4) {
         cout << "[ERROR]: La cantidad debe ser mayor a 0.\n";
     } else {
-        cout << "[ERROR]: Fallo al registrar la entrada de mercancia.\n";
+        cout << "[ERROR]: Fallo al actualizar el stock en " << RUTA_REPUESTOS << ".\n";
     }
 }
 
@@ -403,7 +431,7 @@ void menuCambiarPrecioRepuesto() {
 
     int res = cambiarPrecioRepuestoLogica(idRep, nuevoPrecio);
     if (res == 1) {
-        cout << "Precio actualizado (las ordenes ya registradas conservan su precio historico).\n";
+        cout << "Precio actualizado en " << RUTA_REPUESTOS << " (las ordenes ya registradas conservan su precio historico).\n";
     } else if (res == -2) {
         cout << "[ERROR]: ID invalido o el repuesto no existe.\n";
     } else if (res == -3) {
@@ -411,7 +439,7 @@ void menuCambiarPrecioRepuesto() {
     } else if (res == -4) {
         cout << "[ERROR]: El precio debe ser mayor a 0.\n";
     } else {
-        cout << "[ERROR]: Fallo al cambiar el precio.\n";
+        cout << "[ERROR]: Fallo al cambiar el precio en " << RUTA_REPUESTOS << ".\n";
     }
 }
 
@@ -424,7 +452,7 @@ void menuEliminarRepuesto() {
 
     int res = eliminarRepuestoLogica(idRep);
     if (res == 1) {
-        cout << "Repuesto eliminado logicamente.\n";
+        cout << "Repuesto eliminado logicamente en " << RUTA_REPUESTOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: ID invalido o el repuesto no existe.\n";
     } else if (res == -3) {
@@ -432,7 +460,7 @@ void menuEliminarRepuesto() {
     } else if (res == -4) {
         cout << "[ERROR]: No se puede eliminar; el repuesto aparece en alguna orden.\n";
     } else {
-        cout << "[ERROR]: Fallo al eliminar el repuesto.\n";
+        cout << "[ERROR]: Fallo al eliminar en " << RUTA_REPUESTOS << " o leer " << RUTA_ORDENES << ".\n";
     }
 }
 
@@ -474,7 +502,7 @@ void menuCrearOrden() {
 
     int res = crearOrdenServicioLogica(fecha, falla, km, idVehiculo, idMecanico);
     if (res > 0) {
-        cout << "Orden creada con ID #" << res << ".\n";
+        cout << "Orden creada con ID #" << res << " en " << RUTA_ORDENES << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: El vehiculo no existe.\n";
     } else if (res == -3) {
@@ -490,7 +518,7 @@ void menuCrearOrden() {
     } else if (res == -8) {
         cout << "[ERROR]: El kilometraje de ingreso es menor al del vehiculo.\n";
     } else {
-        cout << "[ERROR]: Fallo al crear la orden.\n";
+        cout << "[ERROR]: Fallo al escribir en " << RUTA_ORDENES << " o actualizar " << RUTA_VEHICULOS << ".\n";
     }
 }
 
@@ -508,11 +536,16 @@ void menuAgregarRepuesto() {
 
     int res = agregarRepuestoAOrdenLogica(idOrden, idRepuesto, cantidad);
     if (res == 1) {
-        cout << "Repuesto agregado exitosamente. Stock actualizado.\n";
+        cout << "Repuesto agregado exitosamente. Stock actualizado en " << RUTA_REPUESTOS << ".\n";
     } else if (res == -3) {
         cout << "[ERROR]: No existe la orden.\n";
     } else if (res == -4) {
-        cout << "[ERROR]: La orden no esta ABIERTA.\n";
+        OrdenServicio ordActual;
+        if (obtenerOrdenPorIDLogica(idOrden, ordActual) == 1) {
+            cout << "[ERROR]: La orden no esta ABIERTA (estado actual: " << ordActual.estado << ").\n";
+        } else {
+            cout << "[ERROR]: La orden no esta ABIERTA.\n";
+        }
     } else if (res == -5) {
         cout << "[ERROR]: No existe el repuesto (o esta eliminado).\n";
     } else if (res == -6) {
@@ -522,7 +555,7 @@ void menuAgregarRepuesto() {
     } else if (res == -8) {
         cout << "[ERROR]: La orden ya tiene 15 lineas de detalle (limite alcanzado).\n";
     } else {
-        cout << "[ERROR]: Fallo al agregar el repuesto.\n";
+        cout << "[ERROR]: Fallo al actualizar " << RUTA_ORDENES << " o " << RUTA_REPUESTOS << ".\n";
     }
 }
 
@@ -537,15 +570,20 @@ void menuQuitarRepuesto() {
 
     int res = quitarRepuestoDeOrdenLogica(idOrden, idRep);
     if (res == 1) {
-        cout << "Linea retirada y stock devuelto al inventario.\n";
+        cout << "Linea retirada y stock devuelto en " << RUTA_REPUESTOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: La orden no existe.\n";
     } else if (res == -3) {
-        cout << "[ERROR]: Solo se pueden quitar repuestos en ordenes ABIERTAS.\n";
+        OrdenServicio ordActual;
+        if (obtenerOrdenPorIDLogica(idOrden, ordActual) == 1) {
+            cout << "[ERROR]: Solo se pueden quitar repuestos en ordenes ABIERTAS (estado actual: " << ordActual.estado << ").\n";
+        } else {
+            cout << "[ERROR]: Solo se pueden quitar repuestos en ordenes ABIERTAS.\n";
+        }
     } else if (res == -4) {
         cout << "[ERROR]: El repuesto no figura en la orden.\n";
     } else {
-        cout << "[ERROR]: Fallo al quitar el repuesto de la orden.\n";
+        cout << "[ERROR]: Fallo al actualizar " << RUTA_ORDENES << " o " << RUTA_REPUESTOS << ".\n";
     }
 }
 
@@ -566,12 +604,19 @@ void menuCerrarOrden() {
 
     int res = cerrarOrdenServicioLogica(idOrden, manoObra, costoRepuestos, totalPagar, ordenEn);
     if (res == 1) {
+        Vehiculo vehFactura;
+        Mecanico mecFactura;
+        bool okVeh = leerRegistroPorID(RUTA_VEHICULOS, ordenEn.idVehiculo, vehFactura);
+        bool okMec = leerRegistroPorID(RUTA_MECANICOS, ordenEn.idMecanico, mecFactura);
+
         cout << "\n=========== FACTURA ===========\n";
-        cout << "Orden #"      << ordenEn.id << "\n";
-        cout << "Vehiculo ID: "  << ordenEn.idVehiculo << "\n";
-        cout << "Mecanico ID: "  << ordenEn.idMecanico << "\n";
-        cout << "Falla: "        << ordenEn.descripcionFalla << "\n";
-        cout << "Fecha cierre: " << ordenEn.fechaCierre << "\n";
+        cout << "Orden #"       << ordenEn.id << "\n";
+        cout << "Vehiculo     : " << (okVeh ? vehFactura.placa : "No disponible")
+             << (okVeh ? (string(" - ") + vehFactura.marca + " " + vehFactura.modelo) : "") << "\n";
+        cout << "Mecanico     : " << (okMec ? mecFactura.nombre : "No disponible")
+             << (okMec && mecFactura.eliminado ? " [BAJA]" : "") << "\n";
+        cout << "Falla        : " << ordenEn.descripcionFalla << "\n";
+        cout << "Fecha cierre : " << ordenEn.fechaCierre << "\n";
         cout << "--------------------------------\n";
         cout << "Mano de obra : $" << ordenEn.manoObra << "\n";
         cout << "Repuestos    : $" << costoRepuestos << "\n";
@@ -587,7 +632,7 @@ void menuCerrarOrden() {
     } else if (res == -5) {
         cout << "[ERROR]: La orden no tiene repuestos y la mano de obra es 0.\n";
     } else {
-        cout << "[ERROR]: Fallo al cerrar la orden.\n";
+        cout << "[ERROR]: Fallo al cerrar la orden en " << RUTA_ORDENES << ".\n";
     }
 }
 
@@ -601,13 +646,13 @@ void menuAnularOrden() {
     OrdenServicio ordenOut;
     int res = anularOrdenLogica(idOrden, ordenOut);
     if (res == 1) {
-        cout << "Orden #" << ordenOut.id << " ANULADA. Se devolvio el stock de sus lineas.\n";
+        cout << "Orden #" << ordenOut.id << " ANULADA en " << RUTA_ORDENES << ". Se devolvio el stock en " << RUTA_REPUESTOS << ".\n";
     } else if (res == -2) {
         cout << "[ERROR]: La orden no existe.\n";
     } else if (res == -3) {
         cout << "[ERROR]: No se puede anular una orden en estado " << ordenOut.estado << ".\n";
     } else {
-        cout << "[ERROR]: Fallo al anular la orden.\n";
+        cout << "[ERROR]: Fallo al anular en " << RUTA_ORDENES << " o actualizar " << RUTA_REPUESTOS << ".\n";
     }
 }
 
@@ -615,7 +660,7 @@ void menuMostrarOrdenes() {
     cout << "\n--- LISTA DE ORDENES DE SERVICIO ---\n";
     ArchivoHeader h;
     if (!leerHeader(RUTA_ORDENES, h)) {
-        cout << "[ERROR] No se pudo leer el archivo.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_ORDENES << ".\n";
         return;
     }
 
@@ -674,7 +719,7 @@ void menuBuscarVehiculoPorID() {
     } else if (res == -2) {
         cout << "[ERROR]: No existe ningun vehiculo con ese ID.\n";
     } else {
-        cout << "[ERROR]: No se pudo leer vehiculos.bin.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_VEHICULOS << ".\n";
     }
 }
 
@@ -691,7 +736,7 @@ void menuBuscarVehiculoPorPlaca() {
     } else if (res == -2) {
         cout << "No hay ningun vehiculo ACTIVO con esa placa.\n";
     } else {
-        cout << "[ERROR]: No se pudo leer vehiculos.bin.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_VEHICULOS << ".\n";
     }
 }
 
@@ -709,7 +754,7 @@ void menuBuscarVehiculosPorPropietario() {
     if (res == -2) {
         cout << "[ERROR]: Debe escribir al menos un caracter.\n";
     } else if (res != 1) {
-        cout << "[ERROR]: No se pudo leer vehiculos.bin.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_VEHICULOS << ".\n";
     } else if (cantidad == 0) {
         cout << "No se encontraron vehiculos activos con ese propietario.\n";
     } else {
@@ -767,7 +812,7 @@ void menuBuscarRepuestos() {
     if (res == -2) {
         cout << "[ERROR]: Debe escribir al menos un caracter.\n";
     } else if (res != 1) {
-        cout << "[ERROR]: No se pudo leer repuestos.bin.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_REPUESTOS << ".\n";
     } else if (cantidad == 0) {
         cout << "No se encontraron repuestos activos con ese codigo o nombre.\n";
     } else {
@@ -813,7 +858,7 @@ void menuListarOrdenesPorEstado() {
     if (res == -2) {
         cout << "[ERROR]: Estado invalido.\n";
     } else if (res != 1) {
-        cout << "[ERROR]: No se pudo leer ordenes.bin.\n";
+        cout << "[ERROR]: No se pudo leer " << RUTA_ORDENES << ".\n";
     } else if (cantidad == 0) {
         cout << "No hay ordenes en estado " << estado << ".\n";
     } else {
@@ -842,12 +887,12 @@ void submenuVehiculos() {
         cout << "Opcion: ";
         cin >> op; cin.clear(); cin.ignore(10000, '\n');
         switch (op) {
-            case 1: menuRegistrarVehiculo();  break;
-            case 2: menuMostrarVehiculos();   break;
-            case 3: menuActualizarVehiculo(); break;
-            case 4: menuEliminarVehiculo();   break;
-            case 5: menuBuscarVehiculoPorID(); break;
-            case 6: menuBuscarVehiculoPorPlaca(); break;
+            case 1: menuRegistrarVehiculo();             break;
+            case 2: menuMostrarVehiculos();              break;
+            case 3: menuActualizarVehiculo();            break;
+            case 4: menuEliminarVehiculo();              break;
+            case 5: menuBuscarVehiculoPorID();           break;
+            case 6: menuBuscarVehiculoPorPlaca();        break;
             case 7: menuBuscarVehiculosPorPropietario(); break;
         }
     } while (op != 0);
@@ -893,8 +938,8 @@ void submenuRepuestos() {
             case 3: menuEntradaMercancia();      break;
             case 4: menuCambiarPrecioRepuesto(); break;
             case 5: menuEliminarRepuesto();      break;
-            case 6: menuBuscarRepuestoPorID(); break;
-            case 7: menuBuscarRepuestos(); break;
+            case 6: menuBuscarRepuestoPorID();   break;
+            case 7: menuBuscarRepuestos();       break;
         }
     } while (op != 0);
 }
@@ -915,13 +960,13 @@ void submenuOrdenes() {
         cout << "Opcion: ";
         cin >> op; cin.clear(); cin.ignore(10000, '\n');
         switch (op) {
-            case 1: menuCrearOrden();      break;
-            case 2: menuAgregarRepuesto(); break;
-            case 3: menuQuitarRepuesto();  break;
-            case 4: menuCerrarOrden();     break;
-            case 5: menuAnularOrden();     break;
-            case 6: menuMostrarOrdenes();  break;
-            case 7: menuBuscarOrdenPorID(); break;
+            case 1: menuCrearOrden();            break;
+            case 2: menuAgregarRepuesto();       break;
+            case 3: menuQuitarRepuesto();        break;
+            case 4: menuCerrarOrden();           break;
+            case 5: menuAnularOrden();           break;
+            case 6: menuMostrarOrdenes();        break;
+            case 7: menuBuscarOrdenPorID();      break;
             case 8: menuListarOrdenesPorEstado(); break;
         }
     } while (op != 0);

@@ -47,6 +47,7 @@ int cantidadVehiculosActivosLogica();
 
 // Mecanicos
 int obtenerMecanicoPorIDLogica(int idMecanico, Mecanico &mecOut);
+int contarOrdenesAbiertasMecanicoLogica(int idMecanico);
 
 // Repuestos
 int obtenerRepuestoPorIDLogica(int idRepuesto, Repuesto &repOut);

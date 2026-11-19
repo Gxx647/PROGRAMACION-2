@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <cstring>
+#include <ctime>
 #include "estructura.h"
 #include "persistencia.h"
 #include "mantenimiento.h"
@@ -14,11 +16,13 @@ int main()
 
     if (!inicializarSistemaArchivos())
     {
-        cout << "[ERROR FATAL]: No se pudo inicializar el sistema de archivos en disco.\n";
+        cout << "[ERROR FATAL]: No se pudo inicializar el sistema de archivos en disco (datos/*.bin).\n";
         return 1;
     }
 
     Taller datosTaller;
+    memset(&datosTaller, 0, sizeof(Taller));
+
     if (!existeTaller())
     {
         cout << "=== CONFIGURACION INICIAL DEL TALLER ===\n";
@@ -31,12 +35,24 @@ int main()
         cout << "Ingrese telefono: ";
         cin.getline(datosTaller.telefono, 20);
 
-        guardarTaller(datosTaller);
-        cout << "¡Datos del taller guardados en disco exitosamente!\n";
+        time_t ahora = time(nullptr);
+        datosTaller.fechaCreacion = ahora;
+        datosTaller.fechaUltimaModificacion = ahora;
+
+        if (!guardarTaller(datosTaller))
+        {
+            cout << "[ERROR]: No se pudo guardar " << RUTA_TALLER << ".\n";
+            return 1;
+        }
+        cout << "¡Datos del taller guardados en " << RUTA_TALLER << " exitosamente!\n";
     }
     else
     {
-        leerTaller(datosTaller);
+        if (!leerTaller(datosTaller))
+        {
+            cout << "[ERROR]: No se pudo leer " << RUTA_TALLER << ".\n";
+            return 1;
+        }
     }
 
     int opcion = 0;
@@ -46,7 +62,7 @@ int main()
 
         cout << "\n========================================\n";
         cout << "      SISTEMA DE GESTION DE TALLER      \n";
-        
+
         cout << "========================================\n";
         cout << "1. Gestion de Vehiculos\n";
         cout << "2. Gestion de Mecanicos (Incluye baja)\n";
