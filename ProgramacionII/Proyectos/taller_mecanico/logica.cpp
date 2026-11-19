@@ -5,42 +5,52 @@
 
 using namespace std;
 
-bool especialidadValida(const char* especialidad) {
-    const char* permitidas[5] = {"Motor", "Frenos", "Electricidad", "Suspension", "General"};
-    for (int i = 0; i < 5; i++) {
-        if (strcmp(especialidad, permitidas[i]) == 0){
+bool especialidadValida(const char *especialidad)
+{
+    const char *permitidas[5] = {"Motor", "Frenos", "Electricidad", "Suspension", "General"};
+    for (int i = 0; i < 5; i++)
+    {
+        if (strcmp(especialidad, permitidas[i]) == 0)
+        {
             return true;
         }
     }
     return false;
 }
 
-// ======================= VEHICULOS =======================
 
-int registrarVehiculoLogica(const char* placa, const char* marca, const char* modelo, int anio, int kilometraje, const char* nombrePropietario, const char* cedulaPropietario, const char* telefonoPropietario) {
-    if (anio < 1950 || anio > 2027) {
+
+int registrarVehiculoLogica(const char *placa, const char *marca, const char *modelo, int anio, int kilometraje, const char *nombrePropietario, const char *cedulaPropietario, const char *telefonoPropietario)
+{
+    if (anio < 1950 || anio > 2027)
+    {
         return -3;
     }
-    if (kilometraje < 0) {
+    if (kilometraje < 0)
+    {
         return -4;
     }
 
-    // Buscar si la placa ya existe entre los vehiculos activos (un registro a la vez)
+    
     ArchivoHeader header;
-    if (!leerHeader(RUTA_VEHICULOS, header)) {
+    if (!leerHeader(RUTA_VEHICULOS, header))
+    {
         return -1;
     }
     Vehiculo existente;
-    for (int i = 1; i <= header.cantidadRegistros; i++) {
-        if (leerRegistroPorID(RUTA_VEHICULOS, i, existente)) {
-            if (!existente.eliminado && strcmp(existente.placa, placa) == 0) {
+    for (int i = 1; i <= header.cantidadRegistros; i++)
+    {
+        if (leerRegistroPorID(RUTA_VEHICULOS, i, existente))
+        {
+            if (!existente.eliminado && strcmp(existente.placa, placa) == 0)
+            {
                 return -2;
             }
         }
     }
 
     Vehiculo nuevo;
-    memset(&nuevo, 0, sizeof(Vehiculo)); // deja todo en cero antes de llenarlo
+    memset(&nuevo, 0, sizeof(Vehiculo)); 
 
     strncpy(nuevo.placa, placa, 9);
     nuevo.placa[9] = '\0';
@@ -57,60 +67,73 @@ int registrarVehiculoLogica(const char* placa, const char* marca, const char* mo
     strncpy(nuevo.telefonoPropietario, telefonoPropietario, 19);
     nuevo.telefonoPropietario[19] = '\0';
 
-    return guardarRegistro(RUTA_VEHICULOS, nuevo); // retorna el ID asignado, o -1
+    return guardarRegistro(RUTA_VEHICULOS, nuevo); 
 }
 
-// ======================= MECANICOS =======================
 
-int registrarMecanico(Mecanico datos) {
+int registrarMecanico(Mecanico datos)
+{
     datos.nombre[99] = '\0';
     datos.cedula[19] = '\0';
     datos.especialidad[19] = '\0';
     datos.fechaIngreso[10] = '\0';
 
-    if (!especialidadValida(datos.especialidad)) {
+    if (!especialidadValida(datos.especialidad))
+    {
         return -3;
     }
 
     ArchivoHeader header;
-    if (!leerHeader(RUTA_MECANICOS, header)) {
+    if (!leerHeader(RUTA_MECANICOS, header))
+    {
         return -1;
     }
 
     Mecanico existente;
-    for (int i = 1; i <= header.cantidadRegistros; i++) {
-        if (leerRegistroPorID(RUTA_MECANICOS, i, existente)) {
-            if (!existente.eliminado && strcmp(existente.cedula, datos.cedula) == 0) {
+    for (int i = 1; i <= header.cantidadRegistros; i++)
+    {
+        if (leerRegistroPorID(RUTA_MECANICOS, i, existente))
+        {
+            if (!existente.eliminado && strcmp(existente.cedula, datos.cedula) == 0)
+            {
                 return -2;
             }
         }
     }
 
-    return guardarRegistro(RUTA_MECANICOS, datos); // retorna el ID asignado, o -1
+    return guardarRegistro(RUTA_MECANICOS, datos); 
 }
 
-// ======================= REPUESTOS =======================
 
-int registrarRepuestoLogica(const char* codigo, const char* nombre, const char* marca, float precio, int stock, int stockMinimo) {
-    if (precio <= 0){
+
+int registrarRepuestoLogica(const char *codigo, const char *nombre, const char *marca, float precio, int stock, int stockMinimo)
+{
+    if (precio <= 0)
+    {
         return -3;
     }
-    if (stock < 0){
+    if (stock < 0)
+    {
         return -4;
     }
-    if (stockMinimo < 0) {
+    if (stockMinimo < 0)
+    {
         return -5;
     }
 
     ArchivoHeader header;
-    if (!leerHeader(RUTA_REPUESTOS, header)){
+    if (!leerHeader(RUTA_REPUESTOS, header))
+    {
         return -1;
     }
 
     Repuesto existente;
-    for (int i = 1; i <= header.cantidadRegistros; i++) {
-        if (leerRegistroPorID(RUTA_REPUESTOS, i, existente)) {
-            if (!existente.eliminado && strcmp(existente.codigo, codigo) == 0) {
+    for (int i = 1; i <= header.cantidadRegistros; i++)
+    {
+        if (leerRegistroPorID(RUTA_REPUESTOS, i, existente))
+        {
+            if (!existente.eliminado && strcmp(existente.codigo, codigo) == 0)
+            {
                 return -2;
             }
         }
@@ -129,54 +152,67 @@ int registrarRepuestoLogica(const char* codigo, const char* nombre, const char* 
     nuevo.stock = stock;
     nuevo.stockMinimo = stockMinimo;
 
-    return guardarRegistro(RUTA_REPUESTOS, nuevo); // retorna el ID asignado, o -1
+    return guardarRegistro(RUTA_REPUESTOS, nuevo); 
 }
 
-// ======================= ORDENES =======================
 
-int crearOrdenServicioLogica(const char* fecha, const char* falla, int km, int idVehiculo, int idMecanico) {
-    // ---- Validaciones (no se escribe nada hasta que todas pasen) ----
+
+int crearOrdenServicioLogica(const char *fecha, const char *falla, int km, int idVehiculo, int idMecanico)
+{
+    
     Vehiculo veh;
-    if (idVehiculo <= 0 || !leerRegistroPorID(RUTA_VEHICULOS, idVehiculo, veh)) {
+    if (idVehiculo <= 0 || !leerRegistroPorID(RUTA_VEHICULOS, idVehiculo, veh))
+    {
         return -2;
     }
-    if (veh.eliminado) {
+    if (veh.eliminado)
+    {
         return -3;
     }
 
     Mecanico mec;
-    if (idMecanico <= 0 || !leerRegistroPorID(RUTA_MECANICOS, idMecanico, mec)) {
+    if (idMecanico <= 0 || !leerRegistroPorID(RUTA_MECANICOS, idMecanico, mec))
+    {
         return -4;
     }
-    if (mec.eliminado) {
+    if (mec.eliminado)
+    {
         return -5;
     }
-    // Recorrer las ordenes de a una: contar abiertas del vehiculo y del mecanico
+    
     ArchivoHeader header;
-    if (!leerHeader(RUTA_ORDENES, header)) {
+    if (!leerHeader(RUTA_ORDENES, header))
+    {
         return -1;
     }
     int abiertasMecanico = 0;
     OrdenServicio existente;
-    for (int i = 1; i <= header.cantidadRegistros; i++) {
-        if (leerRegistroPorID(RUTA_ORDENES, i, existente)) {
-            if (strcmp(existente.estado, "ABIERTA") == 0) {
-                if (existente.idVehiculo == idVehiculo) {
+    for (int i = 1; i <= header.cantidadRegistros; i++)
+    {
+        if (leerRegistroPorID(RUTA_ORDENES, i, existente))
+        {
+            if (strcmp(existente.estado, "ABIERTA") == 0)
+            {
+                if (existente.idVehiculo == idVehiculo)
+                {
                     return -6;
                 }
-                if (existente.idMecanico == idMecanico) {
+                if (existente.idMecanico == idMecanico)
+                {
                     abiertasMecanico++;
                 }
             }
         }
     }
-    if (abiertasMecanico >= MAX_ORDENES_ABIERTAS_MECANICO) {
+    if (abiertasMecanico >= MAX_ORDENES_ABIERTAS_MECANICO)
+    {
         return -7;
     }
-    if (km < veh.kilometraje) {
+    if (km < veh.kilometraje)
+    {
         return -8;
     }
-    // ---- Escrituras: primero la orden, luego el kilometraje del vehiculo ----
+    
     OrdenServicio nueva;
     memset(&nueva, 0, sizeof(OrdenServicio));
 
@@ -192,53 +228,66 @@ int crearOrdenServicioLogica(const char* fecha, const char* falla, int km, int i
     nueva.totalLineas = 0;
 
     int idOrden = guardarRegistro(RUTA_ORDENES, nueva);
-    if (idOrden < 0) {
+    if (idOrden < 0)
+    {
         return -1;
     }
 
     veh.kilometraje = km;
-    if (!sobrescribirRegistro(RUTA_VEHICULOS, idVehiculo, veh)) {
-    return -1;
-}
+    if (!sobrescribirRegistro(RUTA_VEHICULOS, idVehiculo, veh))
+    {
+        return -1;
+    }
     return idOrden;
 }
 
-int agregarRepuestoAOrdenLogica(int idOrden, int idRepuesto, int cantidad) {
-    if (cantidad <= 0) {
+int agregarRepuestoAOrdenLogica(int idOrden, int idRepuesto, int cantidad)
+{
+    if (cantidad <= 0)
+    {
         return -6;
     }
 
     OrdenServicio orden;
-    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, orden)) {
+    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, orden))
+    {
         return -3;
     }
-    if (strcmp(orden.estado, "ABIERTA") != 0) {
+    if (strcmp(orden.estado, "ABIERTA") != 0)
+    {
         return -4;
     }
 
     Repuesto rep;
-    if (idRepuesto <= 0 || !leerRegistroPorID(RUTA_REPUESTOS, idRepuesto, rep)) {
+    if (idRepuesto <= 0 || !leerRegistroPorID(RUTA_REPUESTOS, idRepuesto, rep))
+    {
         return -5;
     }
-    if (rep.eliminado) {
+    if (rep.eliminado)
+    {
         return -5;
     }
-    if (rep.stock < cantidad) {
+    if (rep.stock < cantidad)
+    {
         return -7;
     }
 
-    // Buscar si el repuesto ya esta en la orden
+ 
     int posLinea = -1;
-    for (int i = 0; i < orden.totalLineas; i++) {
-        if (orden.lineasDetalle[i].idRepuesto == idRepuesto) {
+    for (int i = 0; i < orden.totalLineas; i++)
+    {
+        if (orden.lineasDetalle[i].idRepuesto == idRepuesto)
+        {
             posLinea = i;
             break;
         }
     }
 
-    if (posLinea == -1) {
+    if (posLinea == -1)
+    {
         // Linea nueva
-        if (orden.totalLineas >= MAX_LINEAS_DETALLE) {
+        if (orden.totalLineas >= MAX_LINEAS_DETALLE)
+        {
             return -8;
         }
 
@@ -252,40 +301,50 @@ int agregarRepuestoAOrdenLogica(int idOrden, int idRepuesto, int cantidad) {
         orden.lineasDetalle[posLinea].precioHistorico = rep.precio;
         orden.lineasDetalle[posLinea].activo = true;
         orden.totalLineas++;
-    } else {
-        // Ya existia: se acumula y se conserva su precio historico
+    }
+    else
+    {
+        
         orden.lineasDetalle[posLinea].cantidad += cantidad;
     }
 
-    // ---- Escrituras: primero la orden (detalle), despues el stock ----
-    if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, orden)) {
+    
+    if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, orden))
+    {
         return -1;
     }
 
     rep.stock -= cantidad;
-    if (!sobrescribirRegistro(RUTA_REPUESTOS, idRepuesto, rep)) {
+    if (!sobrescribirRegistro(RUTA_REPUESTOS, idRepuesto, rep))
+    {
         return -1;
     }
 
     return 1;
 }
 
-int cerrarOrdenServicioLogica(int idOrden, float manoObra, double& costoRepuestosOut, double& totalPagarOut, OrdenServicio& ordenOut) {
-    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, ordenOut)) {
+int cerrarOrdenServicioLogica(int idOrden, float manoObra, double &costoRepuestosOut, double &totalPagarOut, OrdenServicio &ordenOut)
+{
+    if (idOrden <= 0 || !leerRegistroPorID(RUTA_ORDENES, idOrden, ordenOut))
+    {
         return -2;
     }
-    if (strcmp(ordenOut.estado, "ABIERTA") != 0) {
+    if (strcmp(ordenOut.estado, "ABIERTA") != 0)
+    {
         return -3;
     }
-    if (manoObra < 0) {
+    if (manoObra < 0)
+    {
         return -4;
     }
-    if (ordenOut.totalLineas == 0 && manoObra <= 0) {
+    if (ordenOut.totalLineas == 0 && manoObra <= 0)
+    {
         return -5;
     }
 
     double costoRepuestos = 0.0;
-    for (int i = 0; i < ordenOut.totalLineas; i++) {
+    for (int i = 0; i < ordenOut.totalLineas; i++)
+    {
         costoRepuestos += ordenOut.lineasDetalle[i].cantidad * ordenOut.lineasDetalle[i].precioHistorico;
     }
 
@@ -295,11 +354,132 @@ int cerrarOrdenServicioLogica(int idOrden, float manoObra, double& costoRepuesto
     time_t ahora = time(nullptr);
     strftime(ordenOut.fechaCierre, 11, "%Y-%m-%d", localtime(&ahora));
 
-    if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, ordenOut)) {
+    if (!sobrescribirRegistro(RUTA_ORDENES, idOrden, ordenOut))
+    {
         return -1;
     }
 
     costoRepuestosOut = costoRepuestos;
     totalPagarOut = manoObra + costoRepuestos;
+    return 1;
+}
+
+int actualizarVehiculoLogica(int idVehiculo, const char *marca, const char *modelo, int anio,
+                             const char *nombrePropietario, const char *cedulaPropietario,
+                             const char *telefonoPropietario)
+{
+    if (anio < 1950 || anio > 2027)
+    {
+        return -4;
+    }
+
+    Vehiculo veh;
+    if (idVehiculo <= 0 || !leerRegistroPorID(RUTA_VEHICULOS, idVehiculo, veh))
+    {
+        return -2;
+    }
+    if (veh.eliminado)
+    {
+        return -3;
+    }
+
+   
+    strncpy(veh.marca, marca, 49);
+    veh.marca[49] = '\0';
+
+    strncpy(veh.modelo, modelo, 49);
+    veh.modelo[49] = '\0';
+
+    veh.anio = anio;
+
+    strncpy(veh.nombrePropietario, nombrePropietario, 99);
+    veh.nombrePropietario[99] = '\0';
+
+    strncpy(veh.cedulaPropietario, cedulaPropietario, 19);
+    veh.cedulaPropietario[19] = '\0';
+
+    strncpy(veh.telefonoPropietario, telefonoPropietario, 19);
+    veh.telefonoPropietario[19] = '\0';
+
+    if (!sobrescribirRegistro(RUTA_VEHICULOS, idVehiculo, veh))
+    {
+        return -1;
+    }
+    return 1;
+}
+
+int eliminarVehiculoLogica(int idVehiculo)
+{
+    Vehiculo veh;
+    if (idVehiculo <= 0 || !leerRegistroPorID(RUTA_VEHICULOS, idVehiculo, veh))
+    {
+        return -2;
+    }
+    if (veh.eliminado)
+    {
+        return -3;
+    }
+
+    ArchivoHeader headerOrdenes;
+    if (!leerHeader(RUTA_ORDENES, headerOrdenes))
+    {
+        return -1;
+    }
+
+  
+    OrdenServicio orden;
+    for (int i = 1; i <= headerOrdenes.cantidadRegistros; i++)
+    {
+        if (leerRegistroPorID(RUTA_ORDENES, i, orden))
+        {
+            if (orden.idVehiculo == idVehiculo)
+            {
+                return -4;
+            }
+        }
+    }
+
+    if (!marcarComoEliminado<Vehiculo>(RUTA_VEHICULOS, idVehiculo))
+    {
+        return -1;
+    }
+    return 1;
+}
+
+int darDeBajaMecanicoLogica(int idMecanico)
+{
+    Mecanico mec;
+    if (idMecanico <= 0 || !leerRegistroPorID(RUTA_MECANICOS, idMecanico, mec))
+    {
+        return -2;
+    }
+    if (mec.eliminado)
+    {
+        return -3;
+    }
+
+    ArchivoHeader headerOrdenes;
+    if (!leerHeader(RUTA_ORDENES, headerOrdenes))
+    {
+        return -1;
+    }
+
+  
+    OrdenServicio orden;
+    for (int i = 1; i <= headerOrdenes.cantidadRegistros; i++)
+    {
+        if (leerRegistroPorID(RUTA_ORDENES, i, orden))
+        {
+            if (orden.idMecanico == idMecanico && strcmp(orden.estado, "ABIERTA") == 0)
+            {
+                return -4;
+            }
+        }
+    }
+
+    if (!marcarComoEliminado<Mecanico>(RUTA_MECANICOS, idMecanico))
+    {
+        return -1;
+    }
     return 1;
 }
